@@ -89,8 +89,8 @@ const Banners = () => {
         e.preventDefault();
 
         for (const [key, value] of Object.entries(formData)) {
-            if (!value) {
-                toast.error(`Please fill the "${key}" field`);
+            if (!value && key !== "image") {
+                toast.error(`Please fill the ${key} field`);
                 return;
             };
         };
