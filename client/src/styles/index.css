@@ -1,0 +1,11 @@
+@import "./base.css";
+@tailwind components;
+@tailwind utilities;
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.max-w-screen-xl {
+    max-width: 1600px;
+}
