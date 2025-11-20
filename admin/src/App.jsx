@@ -19,6 +19,7 @@ import Invoice from "./pages/Invoice";
 import ApiDocumentation from "./pages/ApiDocumentation";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import Settings from "./pages/Settings";
 
 function App() {
     const { token } = useSelector((state) => state.auth);
@@ -74,6 +75,7 @@ function App() {
                                                     <Route path="/orders" element={<Orders token={token} />} />
                                                     <Route path="/banners" element={<Banners token={token} />} />
                                                     <Route path="/users" element={<Users token={token} />} />
+                                                    <Route path="/settings" element={<Settings token={token} />} />
                                                 </>
                                             )}
                                             <Route path="/inventory" element={<Inventory />} />

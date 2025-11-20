@@ -127,12 +127,12 @@ const Sidebar = () => {
         //     description: "API documentation",
         //     badge: "📚",
         // },
-        {
-            title: "Invoice",
-            icon: <FaFileInvoice />,
-            path: "/invoice",
-            description: "Generate & manage invoices",
-        },
+        // {
+        //     title: "Invoice",
+        //     icon: <FaFileInvoice />,
+        //     path: "/invoice",
+        //     description: "Generate & manage invoices",
+        // },
     ];
 
     const renderNavItem = (item, isChild = false) => {

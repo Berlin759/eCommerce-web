@@ -1,7 +1,95 @@
-import { FaCog, FaUser, FaDatabase, FaShield, FaBell } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import axios from "axios";
+import { serverUrl } from "../../config";
+import { FaCog, FaUser, FaDatabase, FaShieldVirus, FaBell } from "react-icons/fa";
 import { MdSecurity, MdNotifications } from "react-icons/md";
+import { passwordValidation } from "../utils/general.lib";
 
-const Settings = () => {
+const Settings = ({ token }) => {
+    const [isLoading, setLoading] = useState(false);
+    const [oldPassword, setOldPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [showOldPassword, setShowOldPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const handlePasswordChange = async (e) => {
+        try {
+            e.preventDefault();
+
+            if (!oldPassword) {
+                toast.error("Please Enter Old password");
+                return;
+            };
+
+            if (!newPassword) {
+                toast.error("Please Enter New password");
+                return;
+            };
+
+            if (!confirmPassword) {
+                toast.error("Please Enter Confirm password");
+                return;
+            };
+
+            if (newPassword === oldPassword) {
+                toast.error("Your new password must be different from your old password!");
+                return;
+            };
+
+            if (newPassword !== confirmPassword) {
+                toast.error("New passwords and Confirm password do not match!");
+                return;
+            };
+
+            const validatePassword = passwordValidation(newPassword);
+            if (validatePassword.flag === 0) {
+                toast.error(validatePassword.msg);
+                return;
+            };
+
+            const payload = {
+                newPassword: newPassword,
+                oldPassword: oldPassword,
+            };
+
+            setLoading(true);
+
+            const response = await axios.put(
+                `${serverUrl}/api/setting/change-password`,
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
+            );
+
+            const data = response?.data;
+            if (data?.success) {
+                toast.success(data?.message);
+                setOldPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                toast.error(data?.message);
+            };
+        } catch (error) {
+            console.error("Change Password Error-------->", error);
+            toast.error(error?.message);
+        } finally {
+            setLoading(false);
+        };
+    };
+
     const settingsCategories = [
         {
             title: "General Settings",
@@ -31,7 +119,7 @@ const Settings = () => {
         },
         {
             title: "Security",
-            icon: <FaShield />,
+            icon: <FaShieldVirus />,
             color: "red",
             settings: [
                 { label: "Two-Factor Authentication", value: false, type: "toggle" },
@@ -100,48 +188,189 @@ const Settings = () => {
                 </p>
             </div>
 
-            {/* System Status */}
+            {/* Change Password */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
                 <div className="p-6 border-b border-gray-100">
-                    <h3 className="text-lg font-semibold text-gray-900">System Status</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Change Password</h3>
                 </div>
                 <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <FaDatabase className="text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-900">Database</p>
-                                <p className="text-xs text-green-600">Connected</p>
-                            </div>
+                    <form
+                        onSubmit={handlePasswordChange}
+                        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                    >
+                        <div className="flex flex-col relative">
+                            <label className="text-sm font-medium mb-1">Old Password</label>
+                            <input
+                                type={showOldPassword ? "text" : "password"}
+                                className="px-3 py-2 border border-gray-300 rounded-lg"
+                                value={oldPassword}
+                                onChange={(e) => setOldPassword(e.target.value)}
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowOldPassword(!showOldPassword)}
+                                className="absolute inset-y-25 right-0 pr-3 flex items-center hover:bg-gray-100 rounded-r-xl transition-colors duration-200"
+                            >
+                                {showOldPassword ? (
+                                    <svg
+                                        className="h-5 w-5 text-gray-400 hover:text-gray-600"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                                        />
+                                    </svg>
+                                ) : (
+                                    <svg
+                                        className="h-5 w-5 text-gray-400 hover:text-gray-600"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                        />
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                        />
+                                    </svg>
+                                )}
+                            </button>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                                <MdSecurity className="text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-900">Security</p>
-                                <p className="text-xs text-blue-600">Protected</p>
-                            </div>
+
+                        <div className="flex flex-col relative">
+                            <label className="text-sm font-medium mb-1">New Password</label>
+                            <input
+                                type={showNewPassword ? "text" : "password"}
+                                className="px-3 py-2 border border-gray-300 rounded-lg"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                                className="absolute inset-y-25 right-0 pr-3 flex items-center hover:bg-gray-100 rounded-r-xl transition-colors duration-200"
+                            >
+                                {showNewPassword ? (
+                                    <svg
+                                        className="h-5 w-5 text-gray-400 hover:text-gray-600"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                                        />
+                                    </svg>
+                                ) : (
+                                    <svg
+                                        className="h-5 w-5 text-gray-400 hover:text-gray-600"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                        />
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                        />
+                                    </svg>
+                                )}
+                            </button>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-100 rounded-lg">
-                                <MdNotifications className="text-purple-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-900">
-                                    Notifications
-                                </p>
-                                <p className="text-xs text-purple-600">Active</p>
-                            </div>
+
+                        <div className="flex flex-col relative">
+                            <label className="text-sm font-medium mb-1">
+                                Confirm New Password
+                            </label>
+                            <input
+                                type={showConfirmPassword ? "text" : "password"}
+                                className="px-3 py-2 border border-gray-300 rounded-lg"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute inset-y-25 right-0 pr-3 flex items-center hover:bg-gray-100 rounded-r-xl transition-colors duration-200"
+                            >
+                                {showConfirmPassword ? (
+                                    <svg
+                                        className="h-5 w-5 text-gray-400 hover:text-gray-600"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                                        />
+                                    </svg>
+                                ) : (
+                                    <svg
+                                        className="h-5 w-5 text-gray-400 hover:text-gray-600"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                        />
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                        />
+                                    </svg>
+                                )}
+                            </button>
                         </div>
-                    </div>
+
+                        <div className="md:col-span-3 flex justify-end mt-4">
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+                            >
+                                {isLoading ? "Submitting..." : "Update Password"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
             {/* Settings Categories */}
-            <div className="space-y-6">
+            {/* <div className="space-y-6">
                 {settingsCategories.map((category, index) => (
                     <div
                         key={index}
@@ -181,17 +410,17 @@ const Settings = () => {
                         </div>
                     </div>
                 ))}
-            </div>
+            </div> */}
 
             {/* Save Settings */}
-            <div className="mt-8 flex justify-end gap-4">
+            {/* <div className="mt-8 flex justify-end gap-4">
                 <button className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     Reset to Defaults
                 </button>
                 <button className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
                     Save Changes
                 </button>
-            </div>
+            </div> */}
         </div>
     );
 };
