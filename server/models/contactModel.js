@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const contactSchema = new mongoose.Schema(
     {
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "user",
+            required: true,
+        },
         name: {
             type: String,
             required: true,
@@ -23,20 +28,15 @@ const contactSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
-        userId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "user",
-            required: true,
+        adminNotes: {
+            type: String,
+            trim: true,
+            default: "",
         },
         status: {
             type: String,
             enum: ["unread", "read", "replied"],
             default: "unread",
-        },
-        adminNotes: {
-            type: String,
-            trim: true,
-            default: "",
         },
     },
     {
@@ -49,4 +49,6 @@ contactSchema.index({ userId: 1 });
 contactSchema.index({ status: 1 });
 contactSchema.index({ createdAt: -1 });
 
-export default mongoose.model("Contact", contactSchema);
+const contactModel = mongoose.models.contact || mongoose.model("contact", contactSchema);
+
+export default contactModel;

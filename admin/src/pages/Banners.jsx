@@ -12,6 +12,7 @@ import {
     FaSync,
 } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
+import { serverUrl } from "../../config";
 
 const Banners = () => {
     const { token } = useSelector((state) => state.auth);
@@ -37,7 +38,7 @@ const Banners = () => {
         try {
             setLoading(true);
             const response = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/banner`,
+                `${serverUrl}/api/banner`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -110,8 +111,8 @@ const Banners = () => {
             });
 
             const url = editingBanner
-                ? `${import.meta.env.VITE_BACKEND_URL}/api/banner/${editingBanner._id}`
-                : `${import.meta.env.VITE_BACKEND_URL}/api/banner`;
+                ? `${serverUrl}/api/banner/${editingBanner._id}`
+                : `${serverUrl}/api/banner`;
 
             const response = await fetch(url, {
                 method: editingBanner ? "PUT" : "POST",
@@ -151,7 +152,7 @@ const Banners = () => {
 
         try {
             const response = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/banner/${bannerId}`,
+                `${serverUrl}/api/banner/${bannerId}`,
                 {
                     method: "DELETE",
                     headers: {

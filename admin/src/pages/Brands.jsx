@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import Container from "../components/Container";
 import {
     FaPlus,
     FaEdit,
@@ -12,6 +11,8 @@ import {
     FaSync,
 } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
+import Container from "../components/Container";
+import { serverUrl } from "../../config";
 
 const Brands = () => {
     const { token } = useSelector((state) => state.auth);
@@ -34,7 +35,7 @@ const Brands = () => {
         try {
             setLoading(true);
             const response = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/brand`,
+                `${serverUrl}/api/brand`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -111,8 +112,8 @@ const Brands = () => {
             };
 
             const url = editingBrand
-                ? `${import.meta.env.VITE_BACKEND_URL}/api/brand/${editingBrand._id}`
-                : `${import.meta.env.VITE_BACKEND_URL}/api/brand`;
+                ? `${serverUrl}/api/brand/${editingBrand._id}`
+                : `${serverUrl}/api/brand`;
 
             const response = await fetch(url, {
                 method: editingBrand ? "PUT" : "POST",
@@ -153,7 +154,7 @@ const Brands = () => {
 
         try {
             const response = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/brand/${brandId}`,
+                `${serverUrl}/api/brand/${brandId}`,
                 {
                     method: "DELETE",
                     headers: {

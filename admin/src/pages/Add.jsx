@@ -40,7 +40,7 @@ const Add = ({ token }) => {
         try {
             setLoadingData(true);
             const [categoriesRes] = await Promise.all([
-                fetch(`${import.meta.env.VITE_BACKEND_URL}/api/category`),
+                fetch(`${serverUrl}/api/category`),
             ]);
 
             const categoriesData = await categoriesRes.json();

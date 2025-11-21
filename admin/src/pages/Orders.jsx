@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import Title from "../components/ui/title";
 import SkeletonLoader from "../components/SkeletonLoader";
 import { serverUrl } from "../../config";

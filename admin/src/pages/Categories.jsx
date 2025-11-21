@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import Container from "../components/Container";
 import {
     FaPlus,
     FaEdit,
@@ -11,6 +10,8 @@ import {
     FaSync,
 } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
+import Container from "../components/Container";
+import { serverUrl } from "../../config";
 
 const Categories = () => {
     const { token } = useSelector((state) => state.auth);
@@ -32,7 +33,7 @@ const Categories = () => {
         try {
             setLoading(true);
             const response = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/category`,
+                `${serverUrl}/api/category`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
@@ -106,9 +107,9 @@ const Categories = () => {
             };
 
             const url = editingCategory
-                ? `${import.meta.env.VITE_BACKEND_URL}/api/category/${editingCategory._id
+                ? `${serverUrl}/api/category/${editingCategory._id
                 }`
-                : `${import.meta.env.VITE_BACKEND_URL}/api/category`;
+                : `${serverUrl}/api/category`;
 
             const response = await fetch(url, {
                 method: editingCategory ? "PUT" : "POST",
@@ -149,7 +150,7 @@ const Categories = () => {
 
         try {
             const response = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/category/${categoryId}`,
+                `${serverUrl}/api/category/${categoryId}`,
                 {
                     method: "DELETE",
                     headers: {
