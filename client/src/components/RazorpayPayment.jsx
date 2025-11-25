@@ -4,12 +4,7 @@ import toast from "react-hot-toast";
 import { serverUrl } from "../../config";
 import { FaCreditCard, FaLock, FaSpinner } from "react-icons/fa";
 import { loadStripe } from "@stripe/stripe-js";
-import {
-    Elements,
-    CardElement,
-    useStripe,
-    useElements,
-} from "@stripe/react-stripe-js";
+import api from "../api/axiosInstance";
 
 // Razorpay script loader
 const loadRazorpay = () => {
@@ -43,21 +38,14 @@ const RazorpayPayment = ({ orderId, amount, onSuccess, onCancel }) => {
         };
 
         try {
-            // Create payment intent
-            const token = localStorage.getItem("token");
-            const response = await fetch(
+            const response = await api.post(
                 `${serverUrl}/api/payment/razorpay/create-payment-link`,
                 {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
                     body: JSON.stringify({ orderId }),
                 },
             );
 
-            const data = await response.json();
+            const data = response.data;
 
             if (data.success) {
                 window.location.href = data.paymentLink;
@@ -78,14 +66,9 @@ const RazorpayPayment = ({ orderId, amount, onSuccess, onCancel }) => {
             //     order_id: razorpayOrderId,
 
             //     handler: async function (response) {
-            //         const verifyRes = await fetch(
+            //         const verifyRes = await api.post(
             //             `${serverUrl}/api/payment/razorpay/verify-payment`,
             //             {
-            //                 method: "POST",
-            //                 headers: {
-            //                     "Content-Type": "application/json",
-            //                     Authorization: `Bearer ${token}`,
-            //                 },
             //                 body: JSON.stringify({
             //                     orderId,
             //                     razorpay_payment_id: response.razorpay_payment_id,
@@ -95,7 +78,7 @@ const RazorpayPayment = ({ orderId, amount, onSuccess, onCancel }) => {
             //             },
             //         );
 
-            //         const verifyData = await verifyRes.json();
+            //         const verifyData = verifyRes.data;
 
             //         if (verifyData.success) {
             //             toast.success("Payment successful!");

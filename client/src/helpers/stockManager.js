@@ -6,24 +6,23 @@
  * @param {string} serverUrl - Backend server URL
  * @returns {Promise} - Checkout response
  */
+import api from "../api/axiosInstance";
+
 export const processCheckout = async (cartItems, serverUrl) => {
     try {
-        const response = await fetch(`${serverUrl}/checkout`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+        const response = await api.post(`${serverUrl}/checkout`, {
             body: JSON.stringify({
                 items: cartItems,
             }),
         });
 
-        const data = await response.json();
+        const data = response.data;
+
         return data;
     } catch (error) {
         console.error("Checkout error:", error);
         throw error;
-    }
+    };
 };
 
 /**
@@ -35,23 +34,20 @@ export const processCheckout = async (cartItems, serverUrl) => {
  */
 export const updateProductStock = async (productId, quantity, serverUrl) => {
     try {
-        const response = await fetch(`${serverUrl}/api/product/update-stock`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+        const response = await api.post(`${serverUrl}/api/product/update-stock`, {
             body: JSON.stringify({
                 productId,
                 quantity,
             }),
         });
 
-        const data = await response.json();
+        const data = response.data;
+
         return data;
     } catch (error) {
         console.error("Stock update error:", error);
         throw error;
-    }
+    };
 };
 
 /**

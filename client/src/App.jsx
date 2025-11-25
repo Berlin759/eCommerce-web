@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Banner from "./components/Banner";
 import Container from "./components/Container";
 import BestSellers from "./components/homeProducts/BestSellers";
@@ -14,50 +14,75 @@ import {
     resetOrderCount,
 } from "./redux/orebiSlice";
 import { serverUrl } from "../config";
+import api from "./api/axiosInstance";
 
 function App() {
-    const token = localStorage.getItem("token");
     const dispatch = useDispatch();
+    const [loading, setLoading] = useState(true);
 
     // Function to fetch user orders and update count
-    const fetchUserOrderCount = useCallback(
-        async (token) => {
-            try {
-                const response = await fetch(`${serverUrl}/api/order/my-orders`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+    const fetchUserOrderCount = useCallback(async (token) => {
+        try {
+            const response = await api.get(`${serverUrl}/api/order/my-orders`);
 
-                const data = await response.json();
-                if (data.success) {
-                    dispatch(setOrderCount(data.orders.length));
-                }
-            } catch (error) {
-                console.error("Error fetching order count:", error);
-                // Don't show error to user as this is not critical
-            }
-        },
-        [dispatch]
-    );
+            const data = response.data;
+            if (data.success) {
+                dispatch(setOrderCount(data.orders.length));
+            } else if (data.message === "TOKEN_EXPIRED" || data.message === "INVALID_TOKEN") {
+                // Auto-logout on token failure from backend
+                localStorage.removeItem("token");
+                dispatch(removeUser());
+                dispatch(resetOrderCount());
+            };
+        } catch (error) {
+            console.error("Error fetching order count:", error);
+            // Don't show error to user as this is not critical
+        };
+    }, [dispatch]);
 
     useEffect(() => {
-        if (token) {
-            try {
-                const decodedToken = jwtDecode(token);
-                dispatch(addUser(decodedToken));
-                // Fetch order count for authenticated users
-                fetchUserOrderCount(token);
-            } catch (error) {
-                console.error("Invalid token", error);
-                localStorage.removeItem("token");
-                dispatch(resetOrderCount());
-            }
-        } else {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
             dispatch(removeUser());
             dispatch(resetOrderCount());
-        }
-    }, [token, dispatch, fetchUserOrderCount]);
+            setLoading(false);
+            return;
+        };
+
+        try {
+            const decoded = jwtDecode(token);
+
+            const currentTime = Date.now() / 1000;
+            if (decoded.exp < currentTime) {
+                console.warn("Token expired, logging out");
+                localStorage.removeItem("token");
+                dispatch(removeUser());
+                dispatch(resetOrderCount());
+                setLoading(false);
+                return;
+            };
+
+            dispatch(addUser(decoded));
+            fetchUserOrderCount(token);
+        } catch (error) {
+            console.error("Invalid token:", error);
+            localStorage.removeItem("token");
+            dispatch(removeUser());
+            dispatch(resetOrderCount());
+        };
+
+        setLoading(false);
+    }, [dispatch, fetchUserOrderCount]);
+
+    if (loading) {
+        return (
+            <div className="w-full h-screen flex justify-center items-center text-xl">
+                Loading...
+            </div>
+        );
+    };
+
     return (
         <main className="w-full overflow-hidden">
             <Banner />
@@ -69,6 +94,6 @@ function App() {
             </Container>
         </main>
     );
-}
+};
 
 export default App;

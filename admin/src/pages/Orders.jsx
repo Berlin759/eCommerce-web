@@ -20,6 +20,7 @@ import {
     FaSort,
     FaSync,
 } from "react-icons/fa";
+import api from "../api/axiosInstance";
 
 const Orders = () => {
     const [orders, setOrders] = useState([]);
@@ -47,19 +48,14 @@ const Orders = () => {
     const fetchOrders = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${serverUrl}/api/order/list`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            const response = await api.get(`${serverUrl}/api/order/list`);
 
-            const data = await response.json();
+            const data = response.data;
             if (data.success) {
                 setOrders(data.orders);
             } else {
                 toast.error(data.message || "Failed to fetch orders");
-            }
+            };
         } catch (error) {
             console.error("Error fetching orders:", error);
             toast.error("Failed to load orders");
@@ -71,23 +67,17 @@ const Orders = () => {
     // Update order status
     const updateOrderStatus = async (orderId, status, paymentStatus = null) => {
         try {
-            const token = localStorage.getItem("token");
             const updateData = { orderId, status };
 
             if (paymentStatus) {
                 updateData.paymentStatus = paymentStatus;
             }
 
-            const response = await fetch(`${serverUrl}/api/order/update-status`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
+            const response = await api.post(`${serverUrl}/api/order/update-status`, {
                 body: JSON.stringify(updateData),
             });
 
-            const data = await response.json();
+            const data = response.data;
             if (data.success) {
                 toast.success("Order updated successfully");
                 fetchOrders(); // Refresh orders
@@ -106,20 +96,14 @@ const Orders = () => {
     const deleteOrder = async (orderId) => {
         if (!window.confirm("Are you sure you want to delete this order?")) {
             return;
-        }
+        };
 
         try {
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${serverUrl}/api/order/delete`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
+            const response = await api.post(`${serverUrl}/api/order/delete`, {
                 body: JSON.stringify({ orderId }),
             });
 
-            const data = await response.json();
+            const data = response.data;
             if (data.success) {
                 toast.success("Order deleted successfully");
                 fetchOrders(); // Refresh orders

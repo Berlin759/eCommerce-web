@@ -23,6 +23,7 @@ import {
     FaPaperPlane,
 } from "react-icons/fa";
 import { IoMdAdd, IoMdAddCircle, IoMdAddCircleOutline } from "react-icons/io";
+import api from "../api/axiosInstance";
 
 const Contact = () => {
     const navigate = useNavigate();
@@ -57,14 +58,9 @@ const Contact = () => {
     const fetchContactUs = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${serverUrl}/api/contact/my-contacts`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            const response = await api.get(`${serverUrl}/api/contact/my-contacts`);
 
-            const result = await response.json();
+            const result = response.data;
             if (result.success) {
                 setContactUs(result.data);
             } else {
@@ -113,16 +109,12 @@ const Contact = () => {
         }
 
         try {
-            const response = await fetch(`${serverUrl}/api/contact/create`, {
+            const response = await api.post(`${serverUrl}/api/contact/create`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify(form),
             });
 
-            const data = await response.json();
+            const data = response.data;
 
             if (data.success) {
                 setShowAddModal(false);

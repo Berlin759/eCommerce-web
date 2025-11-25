@@ -12,6 +12,7 @@ import {
 import { IoMdClose } from "react-icons/io";
 import Container from "../components/Container";
 import { serverUrl } from "../../config";
+import api from "../api/axiosInstance";
 
 const Categories = () => {
     const { token } = useSelector((state) => state.auth);
@@ -32,13 +33,8 @@ const Categories = () => {
     const fetchCategories = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await fetch(
-                `${serverUrl}/api/category`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-            const data = await response.json();
+            const response = await api.get(`${serverUrl}/api/category`);
+            const data = response.data;
 
             if (data.success) {
                 setCategories(data.categories);
@@ -106,24 +102,22 @@ const Categories = () => {
                 name: formData.name.trim()
             };
 
-            const url = editingCategory
-                ? `${serverUrl}/api/category/${editingCategory._id
-                }`
-                : `${serverUrl}/api/category`;
+            let result;
+            if (editingCategory) {
+                const response = await api.put(`${serverUrl}/api/category/${editingCategory._id}`, {
+                    body: JSON.stringify(payload),
+                });
 
-            const response = await fetch(url, {
-                method: editingCategory ? "PUT" : "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                // body: formDataToSend,
-                body: JSON.stringify(payload),
-            });
+                result = response.data;
+            } else {
+                const response = await api.post(`${serverUrl}/api/category`, {
+                    body: JSON.stringify(payload),
+                });
 
-            const data = await response.json();
+                result = response.data;
+            };
 
-            if (data.success) {
+            if (result.success) {
                 toast.success(
                     editingCategory
                         ? "Category updated successfully"
@@ -132,7 +126,7 @@ const Categories = () => {
                 fetchCategories();
                 closeModal();
             } else {
-                toast.error(data.message || "Failed to save category");
+                toast.error(result.message || "Failed to save category");
             }
         } catch (error) {
             console.error("Submit category error:", error);
@@ -149,7 +143,7 @@ const Categories = () => {
         };
 
         try {
-            const response = await fetch(
+            const response = await api.delete(
                 `${serverUrl}/api/category/${categoryId}`,
                 {
                     method: "DELETE",
@@ -159,7 +153,7 @@ const Categories = () => {
                 }
             );
 
-            const data = await response.json();
+            const data = response.data;
 
             if (data.success) {
                 toast.success("Category deleted successfully");

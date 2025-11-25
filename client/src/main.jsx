@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import App from "./App.jsx";
 import "./styles/index.css";
+import ProtectedRoute from "./routes/ProtectedRoute";
 import SignIn from "./pages/SignIn.jsx";
 import SignUp from "./pages/SignUp.jsx";
 import About from "./pages/About.jsx";
@@ -56,12 +57,12 @@ const router = createBrowserRouter(
                     element: <Offers />,
                 },
                 {
-                    path: "/orders",
-                    element: <Order />,
-                },
-                {
                     path: "/Product",
                     element: <Product />,
+                },
+                {
+                    path: "/product/:id",
+                    element: <SingleProduct />,
                 },
                 {
                     path: "/shop",
@@ -76,28 +77,44 @@ const router = createBrowserRouter(
                     element: <SignUp />,
                 },
                 {
+                    path: "/orders",
+                    element: (
+                        <ProtectedRoute>
+                            <Order />
+                        </ProtectedRoute>
+                    ),
+                },
+                {
                     path: "/profile",
-                    element: <Profile />,
+                    element: (
+                        <ProtectedRoute>
+                            <Profile />
+                        </ProtectedRoute>
+                    ),
                 },
                 {
                     path: "/wishlist",
-                    element: <Wishlist />,
+                    element: (
+                        <ProtectedRoute>
+                            <Wishlist />
+                        </ProtectedRoute>
+                    ),
                 },
                 {
                     path: "/checkout/:orderId",
-                    element: <Checkout />,
+                    element: (
+                        <ProtectedRoute>
+                            <Checkout />
+                        </ProtectedRoute>
+                    ),
                 },
                 {
                     path: "/payment-success",
-                    element: <PaymentSuccess />,
-                },
-                {
-                    path: "/payment/success",
-                    element: <PaymentSuccess />,
-                },
-                {
-                    path: "/product/:id",
-                    element: <SingleProduct />,
+                    element: (
+                        <ProtectedRoute>
+                            <PaymentSuccess />
+                        </ProtectedRoute>
+                    ),
                 },
                 {
                     path: "*",

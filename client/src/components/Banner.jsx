@@ -12,6 +12,7 @@ import {
     bannerImgThree,
     bannerImgTwo,
 } from "../assets/images/index";
+import api from "../api/axiosInstance";
 
 const bannerData = [
     {
@@ -55,8 +56,8 @@ const Banner = () => {
 
     const fetchBanners = async () => {
         try {
-            const response = await fetch(`${serverUrl}/api/banner`);
-            const data = await response.json();
+            const response = await api.get(`${serverUrl}/api/banner`);
+            const data = response.data;
 
             if (data.success) {
                 // Only show active banners

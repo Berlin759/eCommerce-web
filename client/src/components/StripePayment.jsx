@@ -10,6 +10,7 @@ import {
 import { FaCreditCard, FaLock, FaSpinner } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { serverUrl } from "../../config";
+import api from "../api/axiosInstance";
 
 // Initialize Stripe
 // Make sure to call `loadStripe` outside of a component's render to avoid
@@ -33,21 +34,14 @@ const CheckoutForm = ({ orderId, amount, onSuccess, onCancel }) => {
         setCardError(null);
 
         try {
-            // Create payment intent
-            const token = localStorage.getItem("token");
-            const response = await fetch(
+            const response = await api.post(
                 `${serverUrl}/api/payment/stripe/create-payment-intent`,
                 {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
                     body: JSON.stringify({ orderId }),
-                }
+                },
             );
 
-            const { clientSecret, success, message } = await response.json();
+            const { clientSecret, success, message } = response.data;
 
             if (!success) {
                 setCardError(message || "Payment setup failed");

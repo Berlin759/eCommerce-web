@@ -13,6 +13,7 @@ import {
 } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 import { serverUrl } from "../../config";
+import api from "../api/axiosInstance";
 
 const Banners = () => {
     const { token } = useSelector((state) => state.auth);
@@ -37,15 +38,8 @@ const Banners = () => {
     const fetchBanners = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await fetch(
-                `${serverUrl}/api/banner`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            const data = await response.json();
+            const response = await api.get(`${serverUrl}/api/banner`);
+            const data = response.data;
 
             if (data.success) {
                 setBanners(data.banners);
@@ -110,22 +104,22 @@ const Banners = () => {
                 formDataToSend.append(key, value);
             });
 
-            const url = editingBanner
-                ? `${serverUrl}/api/banner/${editingBanner._id}`
-                : `${serverUrl}/api/banner`;
+            let result;
+            if (editingBanner) {
+                const response = await api.put(`${serverUrl}/api/banner/${editingBanner._id}`, {
+                    body: formDataToSend,
+                });
 
-            const response = await fetch(url, {
-                method: editingBanner ? "PUT" : "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    // "Content-Type": "application/json"
-                },
-                body: formDataToSend,
-            });
+                result = response.data;
+            } else {
+                const response = await api.post(`${serverUrl}/api/banner`, {
+                    body: formDataToSend,
+                });
 
-            const data = await response.json();
+                result = response.data;
+            };
 
-            if (data.success) {
+            if (result.success) {
                 toast.success(
                     editingBanner
                         ? "Banner updated successfully"
@@ -134,7 +128,7 @@ const Banners = () => {
                 fetchBanners();
                 closeModal();
             } else {
-                toast.error(data.message || "Failed to save banner");
+                toast.error(result.message || "Failed to save banner");
             }
         } catch (error) {
             console.error("Submit banner error:", error);
@@ -151,17 +145,9 @@ const Banners = () => {
         }
 
         try {
-            const response = await fetch(
-                `${serverUrl}/api/banner/${bannerId}`,
-                {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await api.delete(`${serverUrl}/api/banner/${bannerId}`);
 
-            const data = await response.json();
+            const data = response.data;
 
             if (data.success) {
                 toast.success("Banner deleted successfully");
@@ -699,7 +685,7 @@ const Banners = () => {
                                         disabled={submitting}
                                         className="flex-1 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
                                     >
-                                        { submitting ? "Saving..." : editingBanner ? "Update" : "Create" }
+                                        {submitting ? "Saving..." : editingBanner ? "Update" : "Create"}
                                     </button>
                                 </div>
                             </form>

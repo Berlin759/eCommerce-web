@@ -15,6 +15,7 @@ import {
     FaArrowRight,
 } from "react-icons/fa";
 import Container from "../components/Container";
+import api from "../api/axiosInstance";
 
 const SignIn = () => {
     const dispatch = useDispatch();
@@ -44,15 +45,11 @@ const SignIn = () => {
     };
 
     // Function to fetch user orders and update count
-    const fetchUserOrderCount = async (token) => {
+    const fetchUserOrderCount = async () => {
         try {
-            const response = await fetch(`${serverUrl}/api/order/my-orders`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            const response = await api.get(`${serverUrl}/api/order/my-orders`);
 
-            const data = await response.json();
+            const data = response.data;
             if (data.success) {
                 dispatch(setOrderCount(data.orders.length));
             }
@@ -91,7 +88,7 @@ const SignIn = () => {
             if (data?.success) {
                 localStorage.setItem("token", data?.token);
                 // Fetch order count after successful login
-                await fetchUserOrderCount(data?.token);
+                await fetchUserOrderCount();
                 toast.success(data?.message);
                 navigate("/");
             } else {

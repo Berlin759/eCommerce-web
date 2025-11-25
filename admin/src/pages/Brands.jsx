@@ -13,6 +13,7 @@ import {
 import { IoMdClose } from "react-icons/io";
 import Container from "../components/Container";
 import { serverUrl } from "../../config";
+import api from "../api/axiosInstance";
 
 const Brands = () => {
     const { token } = useSelector((state) => state.auth);
@@ -34,15 +35,8 @@ const Brands = () => {
     const fetchBrands = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await fetch(
-                `${serverUrl}/api/brand`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            const data = await response.json();
+            const response = await api.get(`${serverUrl}/api/brand`);
+            const data = response.data;
 
             if (data.success) {
                 setBrands(data.brands);
@@ -111,23 +105,22 @@ const Brands = () => {
                 name: formData.name.trim(),
             };
 
-            const url = editingBrand
-                ? `${serverUrl}/api/brand/${editingBrand._id}`
-                : `${serverUrl}/api/brand`;
+            let result;
+            if (editingBrand) {
+                const response = await api.put(`${serverUrl}/api/brand/${editingBrand._id}`, {
+                    body: JSON.stringify(payload),
+                });
 
-            const response = await fetch(url, {
-                method: editingBrand ? "PUT" : "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                // body: formDataToSend,
-                body: JSON.stringify(payload),
-            });
+                result = response.data;
+            } else {
+                const response = await api.post(`${serverUrl}/api/brand`, {
+                    body: JSON.stringify(payload),
+                });
 
-            const data = await response.json();
+                result = response.data;
+            };
 
-            if (data.success) {
+            if (result.success) {
                 toast.success(
                     editingBrand
                         ? "Brand updated successfully"
@@ -136,7 +129,7 @@ const Brands = () => {
                 fetchBrands();
                 closeModal();
             } else {
-                toast.error(data.message || "Failed to save brand");
+                toast.error(result.message || "Failed to save brand");
             }
         } catch (error) {
             console.error("Submit brand error:", error);
@@ -153,17 +146,9 @@ const Brands = () => {
         }
 
         try {
-            const response = await fetch(
-                `${serverUrl}/api/brand/${brandId}`,
-                {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await api.delete(`${serverUrl}/api/brand/${brandId}`);
 
-            const data = await response.json();
+            const data = response.data;
 
             if (data.success) {
                 toast.success("Brand deleted successfully");

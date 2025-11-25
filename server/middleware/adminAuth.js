@@ -4,38 +4,62 @@ import userModel from "../models/userModel.js";
 const adminAuth = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        const token =
-            authHeader && authHeader.startsWith("Bearer ")
-                ? authHeader.slice(7)
-                : req.headers.token;
+        const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : req.headers.token;
 
         if (!token) {
-            return res.json({ success: false, message: "Not Authorized, try again" });
-        }
+            return res.status(401).json({
+                success: false,
+                message: "NO_TOKEN",
+            });
+        };
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+            if (err) {
+                console.error("JWT ERROR-------->", err.name);
 
-        // Find user by ID from token
-        const user = await userModel.findById(decoded.id);
+                if (err.name === "TokenExpiredError") {
+                    return res.status(401).json({
+                        success: false,
+                        message: "TOKEN_EXPIRED",
+                    });
+                };
 
-        if (!user) {
-            return res.json({ success: false, message: "User not found" });
-        }
+                return res.status(401).json({
+                    success: false,
+                    message: "INVALID_TOKEN",
+                });
+            };
 
-        if (user.role !== "admin") {
-            return res.json({ success: false, message: "Admin access required" });
-        }
+            // Find user by decoded ID
+            const user = await userModel.findById(decoded.id);
 
-        if (!user.isActive) {
-            return res.json({ success: false, message: "Account is deactivated" });
-        }
+            if (!user) {
+                return res.status(404).json({ success: false, message: "USER_NOT_FOUND" });
+            };
 
-        // Add user info to request object
-        req.user = user;
-        next();
+            if (user.role !== "admin") {
+                return res.status(404).json({ success: false, message: "ADMIN_ACCESS_REQUIRED" });
+            };
+
+            if (!user.isActive) {
+                return res.status(403).json({
+                    success: false,
+                    message: "ACCOUNT_DEACTIVATED",
+                });
+            };
+
+            req.user = user;
+
+            next();
+        });
     } catch (error) {
-        console.error(error);
-        res.json({ success: false, message: "Invalid token" });
+        console.error("ADMIN AUTH ERROR--------->", error);
+
+        // if (error && error.name === "TokenExpiredError") {
+        //     return res.status(401).json({ success: false, message: "TOKEN_EXPIRED" });
+        // };
+
+        return res.status(500).json({ success: false, message: "SERVER_ERROR" });
     };
 };
 

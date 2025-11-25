@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { serverUrl } from "../../config";
+import api from "../api/axiosInstance";
 
 const PaymentSuccess = () => {
     const [searchParams] = useSearchParams();
@@ -39,19 +40,10 @@ const PaymentSuccess = () => {
             };
 
             try {
-                const token = localStorage.getItem("token");
-
                 // Confirm payment with backend
-                const confirmResponse = await fetch(
-                    `${serverUrl}/api/order/user/${orderId}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    },
-                );
+                const confirmResponse = await api.get(`${serverUrl}/api/order/user/${orderId}`);
 
-                const data = await confirmResponse.json();
+                const data = confirmResponse.data;
                 if (data.success) {
                     setOrder(data.order);
                     toast.success("Payment confirmed successfully!");

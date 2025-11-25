@@ -24,6 +24,7 @@ import {
     FaChevronUp,
 } from "react-icons/fa";
 import { serverUrl } from "../../config";
+import api from "../api/axiosInstance";
 
 const Cart = () => {
     const dispatch = useDispatch();
@@ -74,13 +75,8 @@ const Cart = () => {
 
     const fetchAddresses = async () => {
         try {
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${serverUrl}/api/user/addresses`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            const data = await response.json();
+            const response = await api.get(`${serverUrl}/api/user/addresses`);
+            const data = response.data;
             if (data.success) {
                 setAddresses(data.addresses);
                 // Set default address as selected
@@ -99,17 +95,11 @@ const Cart = () => {
         setIsAddingAddress(true);
 
         try {
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${serverUrl}/api/user/addresses`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
+            const response = await api.post(`${serverUrl}/api/user/addresses`, {
                 body: JSON.stringify(addressForm),
             });
 
-            const data = await response.json();
+            const data = response.data;
             if (data.success) {
                 toast.success("Address added successfully!");
                 fetchAddresses();
@@ -149,13 +139,7 @@ const Cart = () => {
         setIsPlacingOrder(true);
 
         try {
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${serverUrl}/api/order/create`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
+            const response = await api.post(`${serverUrl}/api/order/create`, {
                 body: JSON.stringify({
                     items: products,
                     amount: discount, // Use the discounted amount as final total
@@ -167,7 +151,7 @@ const Cart = () => {
                 }),
             });
 
-            const data = await response.json();
+            const data = response.data;
             if (data.success) {
                 toast.success("Order placed successfully!");
                 dispatch(resetCart());

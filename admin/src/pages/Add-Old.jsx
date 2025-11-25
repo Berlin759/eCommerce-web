@@ -9,6 +9,7 @@ import { serverUrl } from "../../config";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import SmallLoader from "../components/SmallLoader";
+import api from "../api/axiosInstance";
 
 const Add = ({ token }) => {
     const [isLoading, setLoading] = useState(false);
@@ -42,12 +43,12 @@ const Add = ({ token }) => {
         try {
             setLoadingData(true);
             const [categoriesRes, brandsRes] = await Promise.all([
-                fetch(`${serverUrl}/api/category`),
-                fetch(`${serverUrl}/api/brand`),
+                api.get(`${serverUrl}/api/category`),
+                api.get(`${serverUrl}/api/brand`),
             ]);
 
-            const categoriesData = await categoriesRes.json();
-            const brandsData = await brandsRes.json();
+            const categoriesData = categoriesRes.data;
+            const brandsData = brandsRes.data;
 
             if (categoriesData.success) {
                 setCategories(categoriesData.categories);

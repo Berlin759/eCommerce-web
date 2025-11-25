@@ -18,6 +18,7 @@ import Container from "../components/Container";
 import PropTypes from "prop-types";
 import Input, { Label } from "../components/ui/input";
 import SmallLoader from "../components/SmallLoader";
+import api from "../api/axiosInstance";
 
 const List = ({ token }) => {
     const [list, setList] = useState([]);
@@ -78,12 +79,12 @@ const List = ({ token }) => {
     const fetchCategoriesAndBrands = async () => {
         try {
             const [categoriesRes] = await Promise.all([
-                fetch(`${serverUrl}/api/category`),
-                // fetch(`${serverUrl}/api/brand`),
+                api.get(`${serverUrl}/api/category`),
+                // api.get(`${serverUrl}/api/brand`),
             ]);
 
-            const categoriesData = await categoriesRes.json();
-            // const brandsData = await brandsRes.json();
+            const categoriesData = categoriesRes.data;
+            // const brandsData = brandsRes.data;
 
             if (categoriesData.success) {
                 setCategories(categoriesData.categories);
@@ -319,7 +320,7 @@ const List = ({ token }) => {
         (product) =>
             product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             product.category.toLowerCase().includes(searchTerm.toLowerCase())
-            // || (product.brand && product.brand.toLowerCase().includes(searchTerm.toLowerCase()))
+        // || (product.brand && product.brand.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return (
@@ -538,8 +539,8 @@ const List = ({ token }) => {
                                                     </div>
                                                     <div
                                                         className={`text-xs ${product.stock > 0
-                                                                ? "text-green-600"
-                                                                : "text-red-600"
+                                                            ? "text-green-600"
+                                                            : "text-red-600"
                                                             }`}
                                                     >
                                                         {product.stock > 0 ? "In Stock" : "Out of Stock"}
@@ -614,8 +615,8 @@ const List = ({ token }) => {
                                                     </div>
                                                     <div
                                                         className={`text-xs ${product.stock > 0
-                                                                ? "text-green-600"
-                                                                : "text-red-600"
+                                                            ? "text-green-600"
+                                                            : "text-red-600"
                                                             }`}
                                                     >
                                                         {product.stock > 0 ? "In Stock" : "Out of Stock"}

@@ -17,6 +17,7 @@ import {
     FaArrowLeft,
 } from "react-icons/fa";
 import { serverUrl } from "../../config";
+import api from "../api/axiosInstance";
 
 const Checkout = () => {
     const { orderId } = useParams();
@@ -27,16 +28,8 @@ const Checkout = () => {
 
     const fetchOrderDetails = useCallback(async () => {
         try {
-            const token = localStorage.getItem("token");
-            const response = await fetch(
-                `${serverUrl}/api/order/user/${orderId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            const data = await response.json();
+            const response = await api.get(`${serverUrl}/api/order/user/${orderId}`);
+            const data = response.data;
             if (data.success) {
                 setOrder(data.order);
             } else {

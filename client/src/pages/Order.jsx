@@ -23,6 +23,7 @@ import {
     FaShoppingCart,
 } from "react-icons/fa";
 import { serverUrl } from "../../config";
+import api from "../api/axiosInstance";
 
 const Order = () => {
     const navigate = useNavigate();
@@ -45,17 +46,9 @@ const Order = () => {
     const fetchUserOrders = useCallback(async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem("token");
-            const response = await fetch(
-                `${serverUrl}/api/order/my-orders`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await api.get(`${serverUrl}/api/order/my-orders`);
 
-            const data = await response.json();
+            const data = response.data;
             if (data.success) {
                 setOrders(data.orders);
                 // Update order count in Redux

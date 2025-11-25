@@ -18,6 +18,7 @@ import {
     FaSync,
     FaEnvelope,
 } from "react-icons/fa";
+import api from "../api/axiosInstance";
 
 const Contacts = () => {
     const [contactUs, setContactUs] = useState([]);
@@ -40,14 +41,9 @@ const Contacts = () => {
     const fetchContactUs = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${serverUrl}/api/contact/admin/all`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            const response = await api.get(`${serverUrl}/api/contact/admin/all`);
 
-            const result = await response.json();
+            const result = response.data;
             if (result.success) {
                 setContactUs(result.data);
             } else {
@@ -67,23 +63,17 @@ const Contacts = () => {
 
     const updateContactUsStatus = async (contactUsId, status, adminNotes = null) => {
         try {
-            const token = localStorage.getItem("token");
             const updateData = { contactUsId, status };
 
             if (adminNotes) {
                 updateData.adminNotes = adminNotes;
             };
 
-            const response = await fetch(`${serverUrl}/api/contact/admin/update-status`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
+            const response = await api.put(`${serverUrl}/api/contact/admin/update-status`, {
                 body: JSON.stringify(updateData),
             });
 
-            const data = await response.json();
+            const data = response.data;
             if (data.success) {
                 setShowEditModal(false);
                 setEditingContactUs(null);
@@ -104,17 +94,11 @@ const Contacts = () => {
         };
 
         try {
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${serverUrl}/api/contact/delete`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
+            const response = await api.post(`${serverUrl}/api/contact/delete`, {
                 body: JSON.stringify({ contactUsId }),
             });
 
-            const data = await response.json();
+            const data = response.data;
             if (data.success) {
                 toast.success("ContactUs deleted successfully");
                 fetchContactUs();

@@ -4,6 +4,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi2";
 import { serverUrl } from "../../config";
+import api from "../api/axiosInstance";
 
 const Banner = () => {
     const [banners, setBanners] = useState([]);
@@ -13,8 +14,8 @@ const Banner = () => {
     useEffect(() => {
         const fetchBanners = async () => {
             try {
-                const response = await fetch(`${serverUrl}/api/banner`);
-                const data = await response.json();
+                const response = await api.get(`${serverUrl}/api/banner`);
+                const data = response.data;
 
                 if (data.success) {
                     // Only show active banners
