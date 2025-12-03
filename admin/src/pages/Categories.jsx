@@ -104,15 +104,11 @@ const Categories = () => {
 
             let result;
             if (editingCategory) {
-                const response = await api.put(`${serverUrl}/api/category/${editingCategory._id}`, {
-                    body: JSON.stringify(payload),
-                });
+                const response = await api.put(`${serverUrl}/api/category/${editingCategory._id}`, payload);
 
                 result = response.data;
             } else {
-                const response = await api.post(`${serverUrl}/api/category`, {
-                    body: JSON.stringify(payload),
-                });
+                const response = await api.post(`${serverUrl}/api/category`, payload);
 
                 result = response.data;
             };

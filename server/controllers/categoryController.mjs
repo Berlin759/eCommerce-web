@@ -16,11 +16,16 @@ const cleanupTempFile = (filePath) => {
 // Create category
 const createCategory = async (req, res) => {
     try {
+        console.log("req.body------------->", req.body);
         const { name, description } = req.body;
+        console.log("name------------->", name);
 
         const existingCategory = await categoryModel.findOne({
-            name: { $regex: new RegExp(`^${name}$`, "i") },
+            // name: { $regex: new RegExp(`^${name}$`, "i") },
+            name: name,
+            isActive: true,
         });
+        console.log("existingCategory------------->", existingCategory);
 
         if (existingCategory) {
             return res.status(400).json({
