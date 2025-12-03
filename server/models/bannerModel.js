@@ -4,7 +4,6 @@ const bannerSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true,
-        unique: true,
         trim: true,
     },
     subtitle: {
@@ -30,7 +29,6 @@ const bannerSchema = new mongoose.Schema({
     sale: {
         type: String,
         required: true,
-        unique: true,
         trim: true,
     },
     image: {

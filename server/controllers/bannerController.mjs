@@ -77,14 +77,14 @@ const createBanner = async (req, res) => {
 
         await newBanner.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Banner created successfully",
             banner: newBanner,
         });
     } catch (error) {
         console.error("Create banner error:", error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Server error",
         });

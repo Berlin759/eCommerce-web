@@ -101,23 +101,31 @@ const Banners = () => {
             const formDataToSend = new FormData();
 
             Object.entries(formData).forEach(([key, value]) => {
-                formDataToSend.append(key, value);
+                if (value !== null) formDataToSend.append(key, value);
             });
 
-            let result;
+            let response;
             if (editingBanner) {
-                const response = await api.put(`${serverUrl}/api/banner/${editingBanner._id}`, {
-                    body: formDataToSend,
-                });
-
-                result = response.data;
+                response = await api.put(`${serverUrl}/api/banner/${editingBanner._id}`,
+                    formDataToSend,
+                    {
+                        headers: {
+                            "Content-Type": "multipart/form-data",
+                        },
+                    },
+                );
             } else {
-                const response = await api.post(`${serverUrl}/api/banner`, {
-                    body: formDataToSend,
-                });
-
-                result = response.data;
+                response = await api.post(`${serverUrl}/api/banner`,
+                    formDataToSend,
+                    {
+                        headers: {
+                            "Content-Type": "multipart/form-data",
+                        },
+                    },
+                );
             };
+
+            const result = response.data;
 
             if (result.success) {
                 toast.success(
