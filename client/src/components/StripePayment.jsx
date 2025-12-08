@@ -36,9 +36,7 @@ const CheckoutForm = ({ orderId, amount, onSuccess, onCancel }) => {
         try {
             const response = await api.post(
                 `${serverUrl}/api/payment/stripe/create-payment-intent`,
-                {
-                    body: JSON.stringify({ orderId }),
-                },
+                { orderId: orderId },
             );
 
             const { clientSecret, success, message } = response.data;

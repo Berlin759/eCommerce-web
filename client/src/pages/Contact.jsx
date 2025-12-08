@@ -109,10 +109,7 @@ const Contact = () => {
         }
 
         try {
-            const response = await api.post(`${serverUrl}/api/contact/create`, {
-                method: "POST",
-                body: JSON.stringify(form),
-            });
+            const response = await api.post(`${serverUrl}/api/contact/create`, form);
 
             const data = response.data;
 

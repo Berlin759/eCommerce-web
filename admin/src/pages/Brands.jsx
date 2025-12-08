@@ -107,15 +107,11 @@ const Brands = () => {
 
             let result;
             if (editingBrand) {
-                const response = await api.put(`${serverUrl}/api/brand/${editingBrand._id}`, {
-                    body: JSON.stringify(payload),
-                });
+                const response = await api.put(`${serverUrl}/api/brand/${editingBrand._id}`, payload);
 
                 result = response.data;
             } else {
-                const response = await api.post(`${serverUrl}/api/brand`, {
-                    body: JSON.stringify(payload),
-                });
+                const response = await api.post(`${serverUrl}/api/brand`, payload);
 
                 result = response.data;
             };

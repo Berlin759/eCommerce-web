@@ -329,17 +329,15 @@ const addAddress = async (req, res) => {
         const paramUserId = req.params?.userId; // Get from params for admin routes
         const targetUserId = userId || paramUserId;
 
-        const { label, street, city, state, zipCode, country, phone, isDefault } =
-            req.body;
+        const { label, street, city, state, zipCode, country, phone, isDefault } = req.body;
 
         // Validate required fields
         if (!label || !street || !city || !state || !zipCode || !country) {
             return res.json({
                 success: false,
-                message:
-                    "All address fields are required (label, street, city, state, zipCode, country)",
+                message: "All address fields are required (label, street, city, state, zipCode, country)",
             });
-        }
+        };
 
         const user = await userModel.findById(targetUserId);
         if (!user) {

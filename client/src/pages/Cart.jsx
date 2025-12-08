@@ -95,9 +95,8 @@ const Cart = () => {
         setIsAddingAddress(true);
 
         try {
-            const response = await api.post(`${serverUrl}/api/user/addresses`, {
-                body: JSON.stringify(addressForm),
-            });
+            let payload = addressForm;
+            const response = await api.post(`${serverUrl}/api/user/addresses`, payload);
 
             const data = response.data;
             if (data.success) {
@@ -140,15 +139,13 @@ const Cart = () => {
 
         try {
             const response = await api.post(`${serverUrl}/api/order/create`, {
-                body: JSON.stringify({
-                    items: products,
-                    amount: discount, // Use the discounted amount as final total
-                    address: {
-                        ...selectedAddress,
-                        email: userInfo.email,
-                        name: userInfo.name,
-                    },
-                }),
+                items: products,
+                amount: discount, // Use the discounted amount as final total
+                address: {
+                    ...selectedAddress,
+                    email: userInfo.email,
+                    name: userInfo.name,
+                },
             });
 
             const data = response.data;

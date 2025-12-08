@@ -40,9 +40,7 @@ const RazorpayPayment = ({ orderId, amount, onSuccess, onCancel }) => {
         try {
             const response = await api.post(
                 `${serverUrl}/api/payment/razorpay/create-payment-link`,
-                {
-                    body: JSON.stringify({ orderId }),
-                },
+                { orderId: orderId },
             );
 
             const data = response.data;
@@ -69,12 +67,10 @@ const RazorpayPayment = ({ orderId, amount, onSuccess, onCancel }) => {
             //         const verifyRes = await api.post(
             //             `${serverUrl}/api/payment/razorpay/verify-payment`,
             //             {
-            //                 body: JSON.stringify({
-            //                     orderId,
-            //                     razorpay_payment_id: response.razorpay_payment_id,
-            //                     razorpay_order_id: response.razorpay_order_id,
-            //                     razorpay_signature: response.razorpay_signature,
-            //                 }),
+        //                     orderId,
+        //                     razorpay_payment_id: response.razorpay_payment_id,
+        //                     razorpay_order_id: response.razorpay_order_id,
+        //                     razorpay_signature: response.razorpay_signature,
             //             },
             //         );
 

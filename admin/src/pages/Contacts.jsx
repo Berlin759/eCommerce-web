@@ -69,9 +69,7 @@ const Contacts = () => {
                 updateData.adminNotes = adminNotes;
             };
 
-            const response = await api.put(`${serverUrl}/api/contact/admin/update-status`, {
-                body: JSON.stringify(updateData),
-            });
+            const response = await api.put(`${serverUrl}/api/contact/admin/update-status`, updateData);
 
             const data = response.data;
             if (data.success) {
@@ -95,7 +93,7 @@ const Contacts = () => {
 
         try {
             const response = await api.post(`${serverUrl}/api/contact/delete`, {
-                body: JSON.stringify({ contactUsId }),
+                contactUsId: contactUsId,
             });
 
             const data = response.data;

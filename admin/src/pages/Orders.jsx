@@ -73,9 +73,7 @@ const Orders = () => {
                 updateData.paymentStatus = paymentStatus;
             }
 
-            const response = await api.post(`${serverUrl}/api/order/update-status`, {
-                body: JSON.stringify(updateData),
-            });
+            const response = await api.post(`${serverUrl}/api/order/update-status`, updateData);
 
             const data = response.data;
             if (data.success) {
@@ -100,7 +98,7 @@ const Orders = () => {
 
         try {
             const response = await api.post(`${serverUrl}/api/order/delete`, {
-                body: JSON.stringify({ orderId }),
+                orderId: orderId,
             });
 
             const data = response.data;

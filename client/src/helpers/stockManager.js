@@ -11,9 +11,7 @@ import api from "../api/axiosInstance";
 export const processCheckout = async (cartItems, serverUrl) => {
     try {
         const response = await api.post(`${serverUrl}/checkout`, {
-            body: JSON.stringify({
-                items: cartItems,
-            }),
+            items: cartItems,
         });
 
         const data = response.data;
@@ -35,10 +33,8 @@ export const processCheckout = async (cartItems, serverUrl) => {
 export const updateProductStock = async (productId, quantity, serverUrl) => {
     try {
         const response = await api.post(`${serverUrl}/api/product/update-stock`, {
-            body: JSON.stringify({
-                productId,
-                quantity,
-            }),
+            productId: productId,
+            quantity: quantity,
         });
 
         const data = response.data;
