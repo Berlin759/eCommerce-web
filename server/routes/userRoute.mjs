@@ -8,6 +8,7 @@ import {
     userRegister,
     getUserProfile,
     updateUserProfile,
+    changeUserPassword,
     addToCart,
     updateCart,
     getUserCart,
@@ -19,6 +20,7 @@ import {
     setDefaultAddress,
     getUserAddresses,
     uploadUserAvatar,
+    uploadAdminUserAvatar,
 } from "../controllers/userController.mjs";
 import adminAuth from "../middleware/adminAuth.js";
 import userAuth from "../middleware/userAuth.js";
@@ -36,6 +38,7 @@ router.post(`${routeValue}admin`, adminLogin);
 // User-protected routes
 router.get(`${routeValue}profile`, userAuth, getUserProfile);
 router.put(`${routeValue}profile`, userAuth, updateUserProfile);
+router.put(`${routeValue}change-password`, userAuth, changeUserPassword);
 router.post(`${routeValue}cart/add`, userAuth, addToCart);
 router.put(`${routeValue}cart/update`, userAuth, updateCart);
 router.get(`${routeValue}cart`, userAuth, getUserCart);
@@ -52,12 +55,19 @@ router.put(
     setDefaultAddress
 );
 
+router.post(
+    `${routeValue}upload-avatar`,
+    userAuth,
+    avatarUpload.single("avatar"),
+    uploadUserAvatar
+);
+
 // Avatar upload route (admin only)
 router.post(
     `${routeValue}upload-avatar`,
     adminAuth,
     avatarUpload.single("avatar"),
-    uploadUserAvatar
+    uploadAdminUserAvatar
 );
 
 // Address management routes (admin only)

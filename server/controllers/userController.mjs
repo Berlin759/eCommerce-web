@@ -35,11 +35,11 @@ const userLogin = async (req, res) => {
         const { email, password } = req.body;
         const user = await userModel.findOne({ email });
         if (!user) {
-            return res.json({ success: false, message: "User doesn't exist" });
+            return res.status(400).json({ success: false, message: "User doesn't exist" });
         }
 
         if (!user.isActive) {
-            return res.json({ success: false, message: "Account is deactivated" });
+            return res.status(400).json({ success: false, message: "Account is deactivated" });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -49,7 +49,7 @@ const userLogin = async (req, res) => {
             await user.save();
 
             const token = createToken(user);
-            res.json({
+            return res.status(200).json({
                 success: true,
                 token,
                 user: {
@@ -61,11 +61,11 @@ const userLogin = async (req, res) => {
                 message: "User logged in successfully",
             });
         } else {
-            res.json({ success: false, message: "Invalid credentials, try again" });
+            return res.status(400).json({ success: false, message: "Invalid credentials, try again" });
         }
     } catch (error) {
         console.error("User Login Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -82,30 +82,21 @@ const userRegister = async (req, res) => {
         } = req.body;
         const existingUser = await userModel.findOne({ email });
         if (existingUser) {
-            return res.json({ success: false, message: "User already exists" });
+            return res.status(400).json({ success: false, message: "User already exists" });
         }
 
         // Validating email format & strong password
         if (!validator.isEmail(email)) {
-            return res.json({
-                success: false,
-                message: "Please enter a valid email address",
-            });
+            return res.status(400).json({ success: false, message: "Please enter a valid email address", });
         }
 
         if (password.length < 8) {
-            return res.json({
-                success: false,
-                message: "Password length should be equal or greater than 8",
-            });
+            return res.status(400).json({ success: false, message: "Password length should be equal or greater than 8", });
         }
 
         // Only allow admin role creation if the request comes from an admin
         if (role === "admin" && (!req.user || req.user.role !== "admin")) {
-            return res.json({
-                success: false,
-                message: "Only admins can create admin accounts",
-            });
+            return res.status(400).json({ success: false, message: "Only admins can create admin accounts", });
         }
 
         // Hashing user password
@@ -132,7 +123,7 @@ const userRegister = async (req, res) => {
 
         const token = createToken(user);
 
-        res.json({
+        return res.status(200).json({
             success: true,
             token,
             user: {
@@ -145,7 +136,7 @@ const userRegister = async (req, res) => {
         });
     } catch (error) {
         console.error("User Register Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -156,15 +147,15 @@ const adminLogin = async (req, res) => {
         const user = await userModel.findOne({ email });
 
         if (!user) {
-            return res.json({ success: false, message: "User doesn't exist" });
+            return res.status(400).json({ success: false, message: "User doesn't exist" });
         }
 
         if (user.role !== "admin") {
-            return res.json({ success: false, message: "Admin access required" });
+            return res.status(400).json({ success: false, message: "Admin access required" });
         }
 
         if (!user.isActive) {
-            return res.json({ success: false, message: "Account is deactivated" });
+            return res.status(400).json({ success: false, message: "Account is deactivated" });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -174,7 +165,7 @@ const adminLogin = async (req, res) => {
             await user.save();
 
             const token = createToken(user);
-            res.json({
+            return res.status(200).json({
                 success: true,
                 token,
                 user: {
@@ -186,11 +177,11 @@ const adminLogin = async (req, res) => {
                 message: "Welcome admin",
             });
         } else {
-            res.json({ success: false, message: "Invalid credentials" });
+            return res.status(400).json({ success: false, message: "Invalid credentials" });
         }
     } catch (error) {
         console.error("Admin Login Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -200,7 +191,7 @@ const removeUser = async (req, res) => {
         const user = await userModel.findById(req.body._id);
 
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
         // Delete user's avatar from Cloudinary if exists
@@ -213,10 +204,10 @@ const removeUser = async (req, res) => {
         };
 
         await userModel.findByIdAndDelete(req.body._id);
-        res.json({ success: true, message: "User deleted successfully" });
+        return res.status(200).json({ success: true, message: "User deleted successfully" });
     } catch (error) {
         console.error("Removed user Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -227,16 +218,13 @@ const updateUser = async (req, res) => {
 
         const user = await userModel.findById(id);
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
         if (name) user.name = name;
         if (email) {
             if (!validator.isEmail(email)) {
-                return res.json({
-                    success: false,
-                    message: "Please enter a valid email address",
-                });
+                return res.status(400).json({ success: false, message: "Please enter a valid email address", });
             }
             user.email = email;
         }
@@ -244,10 +232,7 @@ const updateUser = async (req, res) => {
         if (role) {
             // Only allow admin role updates if the requesting user is admin
             if (role === "admin" && (!req.user || req.user.role !== "admin")) {
-                return res.json({
-                    success: false,
-                    message: "Only admins can assign admin role",
-                });
+                return res.status(400).json({ success: false, message: "Only admins can assign admin role", });
             }
             user.role = role;
         }
@@ -269,10 +254,7 @@ const updateUser = async (req, res) => {
 
         if (password) {
             if (password.length < 8) {
-                return res.json({
-                    success: false,
-                    message: "Password length should be equal or greater than 8",
-                });
+                return res.status(400).json({ success: false, message: "Password length should be equal or greater than 8", });
             }
 
             const salt = await bcrypt.genSalt(10);
@@ -281,10 +263,10 @@ const updateUser = async (req, res) => {
 
         await user.save();
 
-        res.json({ success: true, message: "User updated successfully" });
+        return res.status(200).json({ success: true, message: "User updated successfully" });
     } catch (error) {
         console.error("Update user Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -307,7 +289,7 @@ const getUsers = async (req, res) => {
             .skip(skip)
             .limit(parseInt(limit));
 
-        res.json({
+        return res.status(200).json({
             success: true,
             total,
             users,
@@ -316,7 +298,7 @@ const getUsers = async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -333,15 +315,12 @@ const addAddress = async (req, res) => {
 
         // Validate required fields
         if (!label || !street || !city || !state || !zipCode || !country) {
-            return res.json({
-                success: false,
-                message: "All address fields are required (label, street, city, state, zipCode, country)",
-            });
+            return res.status(400).json({ success: false, message: "All address fields are required (label, street, city, state, zipCode, country)", });
         };
 
         const user = await userModel.findById(targetUserId);
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
         // If this is being set as default, remove default from other addresses
@@ -364,14 +343,14 @@ const addAddress = async (req, res) => {
         user.addresses.push(newAddress);
         await user.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Address added successfully",
             address: newAddress,
         });
     } catch (error) {
         console.error("Add Address Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -387,14 +366,14 @@ const updateAddress = async (req, res) => {
 
         const user = await userModel.findById(targetUserId);
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
         const addressIndex = user.addresses.findIndex(
             (addr) => addr._id.toString() === addressId
         );
         if (addressIndex === -1) {
-            return res.json({ success: false, message: "Address not found" });
+            return res.status(400).json({ success: false, message: "Address not found" });
         }
 
         // If setting as default, remove default from other addresses
@@ -421,14 +400,14 @@ const updateAddress = async (req, res) => {
         user.addresses[addressIndex] = updatedAddress;
         await user.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Address updated successfully",
             address: updatedAddress,
         });
     } catch (error) {
         console.error("Update Address Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -442,14 +421,14 @@ const deleteAddress = async (req, res) => {
 
         const user = await userModel.findById(targetUserId);
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
         const addressIndex = user.addresses.findIndex(
             (addr) => addr._id.toString() === addressId
         );
         if (addressIndex === -1) {
-            return res.json({ success: false, message: "Address not found" });
+            return res.status(400).json({ success: false, message: "Address not found" });
         }
 
         const wasDefault = user.addresses[addressIndex].isDefault;
@@ -462,13 +441,13 @@ const deleteAddress = async (req, res) => {
 
         await user.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Address deleted successfully",
         });
     } catch (error) {
         console.error("Delete Address Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -482,14 +461,14 @@ const setDefaultAddress = async (req, res) => {
 
         const user = await userModel.findById(targetUserId);
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
         const addressIndex = user.addresses.findIndex(
             (addr) => addr._id.toString() === addressId
         );
         if (addressIndex === -1) {
-            return res.json({ success: false, message: "Address not found" });
+            return res.status(400).json({ success: false, message: "Address not found" });
         }
 
         // Remove default from all addresses and set the specified one as default
@@ -498,13 +477,13 @@ const setDefaultAddress = async (req, res) => {
 
         await user.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Default address updated successfully",
         });
     } catch (error) {
         console.error("Set Default Address Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -517,27 +496,27 @@ const getUserAddresses = async (req, res) => {
 
         const user = await userModel.findById(targetUserId).select("addresses");
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
-        res.json({
+        return res.status(200).json({
             success: true,
             addresses: user.addresses || [],
         });
     } catch (error) {
         console.error("Get Addresses Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
 // Avatar upload function
 const uploadUserAvatar = async (req, res) => {
     try {
+        const userId = req.user?.id;
         if (!req.file) {
-            return res.json({ success: false, message: "No file uploaded" });
-        }
+            return res.status(400).json({ success: false, message: "No file uploaded" });
+        };
 
-        // Upload image to Cloudinary in the ECommerce/users folder
         const uploadResult = await cloudinary.uploader.upload(req.file.path, {
             folder: "orebi/users",
             resource_type: "image",
@@ -550,7 +529,15 @@ const uploadUserAvatar = async (req, res) => {
         // Clean up temporary file
         cleanupTempFile(req.file.path);
 
-        res.json({
+        const updateUser = await userModel.findByIdAndUpdate(userId,
+            { avatar: uploadResult.secure_url },
+            { new: true }
+        );
+        if (!updateUser) {
+            return res.status(400).json({ success: false, message: "Something went Wrong, please try again later." });
+        };
+
+        return res.status(200).json({
             success: true,
             message: "Avatar uploaded successfully",
             avatarUrl: uploadResult.secure_url,
@@ -562,30 +549,42 @@ const uploadUserAvatar = async (req, res) => {
             cleanupTempFile(req.file.path);
         };
 
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     };
 };
 
-export {
-    userLogin,
-    userRegister,
-    adminLogin,
-    getUsers,
-    removeUser,
-    updateUser,
-    getUserProfile,
-    updateUserProfile,
-    addToCart,
-    updateCart,
-    getUserCart,
-    clearCart,
-    createAdmin,
-    addAddress,
-    updateAddress,
-    deleteAddress,
-    setDefaultAddress,
-    getUserAddresses,
-    uploadUserAvatar,
+const uploadAdminUserAvatar = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: "No file uploaded" });
+        };
+
+        const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+            folder: "orebi/users",
+            resource_type: "image",
+            transformation: [
+                { width: 400, height: 400, crop: "fill", gravity: "face" },
+                { quality: "auto", fetch_format: "auto" },
+            ],
+        });
+
+        // Clean up temporary file
+        cleanupTempFile(req.file.path);
+
+        return res.status(200).json({
+            success: true,
+            message: "Avatar uploaded successfully",
+            avatarUrl: uploadResult.secure_url,
+        });
+    } catch (error) {
+        console.error("Avatar upload error", error);
+
+        if (req.file?.path) {
+            cleanupTempFile(req.file.path);
+        };
+
+        return res.status(400).json({ success: false, message: error.message });
+    };
 };
 
 // Get user profile
@@ -597,8 +596,8 @@ const getUserProfile = async (req, res) => {
             .populate("orders");
 
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
-        }
+            return res.status(400).json({ success: false, message: "User not found" });
+        };
 
         const userProfile = {
             id: user._id,
@@ -606,8 +605,7 @@ const getUserProfile = async (req, res) => {
             email: user.email,
             role: user.role,
             phone: user.addresses && user.addresses[0] ? user.addresses[0].phone : "",
-            address:
-                user.addresses && user.addresses[0] ? user.addresses[0].street : "",
+            address: user.addresses && user.addresses[0] ? user.addresses[0].street : "",
             avatar: user.avatar,
             createdAt: user.createdAt,
             lastLogin: user.lastLogin,
@@ -616,10 +614,10 @@ const getUserProfile = async (req, res) => {
             addresses: user.addresses,
         };
 
-        res.json({ success: true, user: userProfile });
+        return res.status(200).json({ success: true, user: userProfile });
     } catch (error) {
         console.error("Get Profile Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -630,16 +628,13 @@ const updateUserProfile = async (req, res) => {
         const user = await userModel.findById(req.user.id);
 
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
         if (name) user.name = name;
         if (email) {
             if (!validator.isEmail(email)) {
-                return res.json({
-                    success: false,
-                    message: "Please enter a valid email address",
-                });
+                return res.status(400).json({ success: false, message: "Please enter a valid email address", });
             }
 
             // Check if email is already taken by another user
@@ -648,10 +643,7 @@ const updateUserProfile = async (req, res) => {
                 _id: { $ne: req.user.id },
             });
             if (existingUser) {
-                return res.json({
-                    success: false,
-                    message: "Email is already taken by another user",
-                });
+                return res.status(400).json({ success: false, message: "Email is already taken by another user", });
             }
 
             user.email = email;
@@ -682,7 +674,7 @@ const updateUserProfile = async (req, res) => {
 
         await user.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Profile updated successfully",
             user: {
@@ -690,17 +682,73 @@ const updateUserProfile = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                phone:
-                    user.addresses && user.addresses[0] ? user.addresses[0].phone : "",
-                address:
-                    user.addresses && user.addresses[0] ? user.addresses[0].street : "",
+                phone: user.addresses && user.addresses[0] ? user.addresses[0].phone : "",
+                address: user.addresses && user.addresses[0] ? user.addresses[0].street : "",
                 avatar: user.avatar,
                 createdAt: user.createdAt,
             },
         });
     } catch (error) {
         console.error("Update Profile Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+const changeUserPassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+        const userId = req.user.id;
+        const user = await userModel.findById(userId);
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: "User not found" });
+        };
+
+        if (!oldPassword) {
+            return res.status(400).json({ success: false, message: "Please Enter Old Password" });
+        };
+
+        if (!newPassword) {
+            return res.status(400).json({ success: false, message: "Please Enter New Password" });
+        };
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ success: false, message: "Invalid old password. Please try again." });
+        };
+
+        if (oldPassword === newPassword) {
+            return res.status(400).json({ success: false, message: "New password cannot be same as old password. Please try another password." });
+        };
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        const updateUser = await userModel.findByIdAndUpdate(userId,
+            { password: hashedPassword },
+            { new: true }
+        );
+        if (!updateUser) {
+            return res.status(400).json({ success: false, message: "Something went Wrong, please try again later." });
+        };
+
+        return res.status(200).json({
+            success: true,
+            message: "Password updated successfully.",
+            user: {
+                id: updateUser._id,
+                name: updateUser.name,
+                email: updateUser.email,
+                role: updateUser.role,
+                phone: updateUser.addresses && updateUser.addresses[0] ? updateUser.addresses[0].phone : "",
+                address: updateUser.addresses && updateUser.addresses[0] ? updateUser.addresses[0].street : "",
+                avatar: updateUser.avatar,
+                createdAt: updateUser.createdAt,
+            },
+        });
+    } catch (error) {
+        console.error("Update Password Error", error);
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -711,7 +759,7 @@ const addToCart = async (req, res) => {
         const user = await userModel.findById(req.user.id);
 
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
         const cartKey = size ? `${productId}_${size}` : productId;
@@ -724,14 +772,14 @@ const addToCart = async (req, res) => {
 
         await user.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Item added to cart",
             cart: user.userCart,
         });
     } catch (error) {
         console.error("Add to Cart Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -742,7 +790,7 @@ const updateCart = async (req, res) => {
         const user = await userModel.findById(req.user.id);
 
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
         const cartKey = size ? `${productId}_${size}` : productId;
@@ -755,14 +803,14 @@ const updateCart = async (req, res) => {
 
         await user.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Cart updated successfully",
             cart: user.userCart,
         });
     } catch (error) {
         console.error("Update Cart Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -772,16 +820,16 @@ const getUserCart = async (req, res) => {
         const user = await userModel.findById(req.user.id);
 
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
-        res.json({
+        return res.status(200).json({
             success: true,
             cart: user.userCart || {},
         });
     } catch (error) {
         console.error("Get Cart Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -791,19 +839,19 @@ const clearCart = async (req, res) => {
         const user = await userModel.findById(req.user.id);
 
         if (!user) {
-            return res.json({ success: false, message: "User not found" });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
         user.userCart = {};
         await user.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Cart cleared successfully",
         });
     } catch (error) {
         console.error("Clear Cart Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -814,26 +862,20 @@ const createAdmin = async (req, res) => {
 
         // Check if requesting user is admin
         if (req.user.role !== "admin") {
-            return res.json({ success: false, message: "Admin access required" });
+            return res.status(400).json({ success: false, message: "Admin access required" });
         }
 
         const existingUser = await userModel.findOne({ email });
         if (existingUser) {
-            return res.json({ success: false, message: "User already exists" });
+            return res.status(400).json({ success: false, message: "User already exists" });
         }
 
         if (!validator.isEmail(email)) {
-            return res.json({
-                success: false,
-                message: "Please enter a valid email address",
-            });
+            return res.status(400).json({ success: false, message: "Please enter a valid email address", });
         }
 
         if (password.length < 8) {
-            return res.json({
-                success: false,
-                message: "Password length should be equal or greater than 8",
-            });
+            return res.status(400).json({ success: false, message: "Password length should be equal or greater than 8", });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -848,7 +890,7 @@ const createAdmin = async (req, res) => {
 
         const admin = await newAdmin.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Admin created successfully!",
             admin: {
@@ -860,6 +902,30 @@ const createAdmin = async (req, res) => {
         });
     } catch (error) {
         console.error("Create Admin Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     };
+};
+
+export {
+    userLogin,
+    userRegister,
+    adminLogin,
+    getUsers,
+    removeUser,
+    updateUser,
+    getUserProfile,
+    updateUserProfile,
+    changeUserPassword,
+    addToCart,
+    updateCart,
+    getUserCart,
+    clearCart,
+    createAdmin,
+    addAddress,
+    updateAddress,
+    deleteAddress,
+    setDefaultAddress,
+    getUserAddresses,
+    uploadUserAvatar,
+    uploadAdminUserAvatar,
 };
