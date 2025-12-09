@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Add from "./pages/Add";
 import List from "./pages/List";
 import Orders from "./pages/Orders";
+import Checkout from "./pages/Checkout";
 import Banners from "./pages/Banners";
 import Users from "./pages/Users";
 import Analytics from "./pages/Analytics";
@@ -41,17 +42,15 @@ function App() {
                                 <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white py-2 px-4 text-center text-sm font-medium shadow-sm">
                                     <div className="flex items-center justify-center gap-2 flex-wrap">
                                         <span>💖</span>
-                                        <span>
-                                            Support this project & get the premium source code!
-                                        </span>
-                                        <a
+                                        <span>Support our product & get the best product!</span>
+                                        {/* <a
                                             href="https://buymeacoffee.com/reactbd"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-colors duration-200 text-xs font-semibold"
                                         >
                                             ☕ Buy Me a Coffee
-                                        </a>
+                                        </a> */}
                                     </div>
                                 </div>
 
@@ -73,6 +72,7 @@ function App() {
                                                     <Route path="/add" element={<Add token={token} />} />
                                                     <Route path="/list" element={<List token={token} />} />
                                                     <Route path="/orders" element={<Orders token={token} />} />
+                                                    <Route path="/checkout/:orderId" element={<Checkout token={token} />} />
                                                     <Route path="/banners" element={<Banners token={token} />} />
                                                     <Route path="/users" element={<Users token={token} />} />
                                                     <Route path="/settings" element={<Settings token={token} />} />

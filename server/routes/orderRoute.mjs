@@ -3,6 +3,7 @@ import {
     createOrder,
     getAllOrders,
     getUserOrders,
+    getAdminUserOrdersDetails,
     getUserOrderById,
     updateOrderStatus,
     getOrderStats,
@@ -21,6 +22,7 @@ router.get(`${routeValue}my-orders`, userAuth, getUserOrders);
 router.get(`${routeValue}user/:orderId`, userAuth, getUserOrderById);
 
 // Admin routes
+router.get(`${routeValue}admin/orderDetails/:orderId`, adminAuth, getAdminUserOrdersDetails);
 router.get(`${routeValue}admin/user/:userId`, adminAuth, getUserOrders);
 router.get(`${routeValue}list`, adminAuth, getAllOrders);
 router.get(`${routeValue}stats`, adminAuth, getOrderStats);

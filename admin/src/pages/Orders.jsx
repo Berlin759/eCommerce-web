@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Title from "../components/ui/title";
 import SkeletonLoader from "../components/SkeletonLoader";
@@ -10,6 +11,7 @@ import {
     FaCalendarAlt,
     FaUser,
     FaShoppingBag,
+    FaEye,
     FaCreditCard,
     FaMoneyBillWave,
     FaClock,
@@ -481,6 +483,14 @@ const Orders = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex items-center justify-end space-x-2">
+                                            <Link
+                                                to={`/checkout/${order._id}`}
+                                                className="text-green-600 hover:text-green-900 transition-colors p-1 rounded"
+                                                title="Order Details"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <FaEye className="w-4 h-4" />
+                                            </Link>
                                             <button
                                                 onClick={() => handleEditOrder(order)}
                                                 className="text-blue-600 hover:text-blue-900 p-1 rounded"

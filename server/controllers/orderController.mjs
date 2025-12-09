@@ -9,34 +9,25 @@ const createOrder = async (req, res) => {
         const userId = req.user?.id;
 
         if (!userId) {
-            return res.json({
-                success: false,
-                message: "User not authenticated",
-            });
+            return res.status(400).json({ success: false, message: "User not authenticated" });
         };
 
         // Verify user exists
         const user = await userModel.findById(userId);
         if (!user) {
-            return res.json({
-                success: false,
-                message: "User not found",
-            });
+            return res.status(400).json({ success: false, message: "User not found" });
         }
 
         if (!items || !Array.isArray(items) || items.length === 0) {
-            return res.json({ success: false, message: "Order items are required" });
+            return res.status(400).json({ success: false, message: "Order items are required" });
         };
 
         if (!amount) {
-            return res.json({ success: false, message: "Order amount is required" });
+            return res.status(400).json({ success: false, message: "Order amount is required" });
         };
 
         if (!address) {
-            return res.json({
-                success: false,
-                message: "Delivery address is required",
-            });
+            return res.status(400).json({ success: false, message: "Delivery address is required" });
         };
 
         address["firstName"] = user.name;
@@ -89,7 +80,7 @@ const createOrder = async (req, res) => {
         });
 
         if (missingFields.length > 0) {
-            return res.json({
+            return res.status(400).json({
                 success: false,
                 message: `Missing required address fields: ${missingFields.join(", ")}`,
                 debug: {
@@ -107,10 +98,7 @@ const createOrder = async (req, res) => {
             (item) => !item._id && !item.productId
         );
         if (itemsWithoutProductId.length > 0) {
-            return res.json({
-                success: false,
-                message: "All items must have a valid product ID",
-            });
+            return res.status(400).json({ success: false, message: "All items must have a valid product ID" });
         };
 
         // Create new order with properly mapped fields
@@ -147,7 +135,7 @@ const createOrder = async (req, res) => {
             $push: { orders: newOrder._id },
         });
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Order created successfully",
             order: newOrder,
@@ -155,11 +143,8 @@ const createOrder = async (req, res) => {
         });
     } catch (error) {
         console.error("Create Order Error:", error);
-        res.json({
-            success: false,
-            message: error.message,
-        });
-    }
+        return res.status(400).json({ success: false, message: error.message });
+    };
 };
 
 // Get all orders (Admin)
@@ -171,7 +156,7 @@ const getAllOrders = async (req, res) => {
             .populate("items.productId", "name image")
             .sort({ date: -1 });
 
-        res.json({
+        return res.status(200).json({
             success: true,
             orders,
             total: orders.length,
@@ -179,11 +164,8 @@ const getAllOrders = async (req, res) => {
         });
     } catch (error) {
         console.error("Get All Orders Error:", error);
-        res.json({
-            success: false,
-            message: error.message,
-        });
-    }
+        return res.status(400).json({ success: false, message: error.message });
+    };
 };
 
 // Get orders by user ID
@@ -194,18 +176,15 @@ const getUserOrders = async (req, res) => {
         const requestUserId = userId || req.user?.id; // Use param for admin, auth user for regular users
 
         if (!requestUserId) {
-            return res.json({
-                success: false,
-                message: "User ID not provided",
-            });
-        }
+            return res.status(400).json({ success: false, message: "User ID not provided" });
+        };
 
         const orders = await orderModel
             .find({ userId: requestUserId })
             .populate("items.productId", "name image price")
             .sort({ date: -1 });
 
-        res.json({
+        return res.status(200).json({
             success: true,
             orders,
             total: orders.length,
@@ -213,10 +192,32 @@ const getUserOrders = async (req, res) => {
         });
     } catch (error) {
         console.error("Get User Orders Error:", error);
-        res.json({
-            success: false,
-            message: error.message,
-        });
+        return res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+const getAdminUserOrdersDetails = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const adminId = req.user?.id;
+
+        if (!orderId) {
+            return res.status(400).json({ success: false, message: "Invalid Order Id" });
+        };
+
+        const order = await orderModel
+            .findOne({ _id: orderId })
+            .populate("items.productId", "name image price")
+            .populate("userId", "name email role addresses isActive avatar");
+
+        if (!order) {
+            return res.status(400).json({ success: false, message: "Order not found" });
+        };
+
+        return res.status(200).json({ success: true, order, message: "User Order fetched successfully" });
+    } catch (error) {
+        console.error("Get Admin User Orders Details Error:", error);
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -231,24 +232,14 @@ const getUserOrderById = async (req, res) => {
             .populate("items.productId", "name image price");
 
         if (!order) {
-            return res.json({
-                success: false,
-                message: "Order not found",
-            });
-        }
+            return res.status(400).json({ success: false, message: "Order not found" });
+        };
 
-        res.json({
-            success: true,
-            order,
-            message: "Order fetched successfully",
-        });
+        return res.status(200).json({ success: true, order, message: "Order fetched successfully" });
     } catch (error) {
         console.error("Get User Order By ID Error:", error);
-        res.json({
-            success: false,
-            message: error.message,
-        });
-    }
+        return res.status(400).json({ success: false, message: error.message });
+    };
 };
 
 // Update order status (Admin)
@@ -257,11 +248,8 @@ const updateOrderStatus = async (req, res) => {
         const { orderId, status, paymentStatus } = req.body;
 
         if (!orderId || !status) {
-            return res.json({
-                success: false,
-                message: "Order ID and status are required",
-            });
-        }
+            return res.status(400).json({ success: false, message: "Order ID and status are required" });
+        };
 
         const validStatuses = [
             "pending",
@@ -271,27 +259,18 @@ const updateOrderStatus = async (req, res) => {
             "cancelled",
         ];
         if (!validStatuses.includes(status)) {
-            return res.json({
-                success: false,
-                message: "Invalid status",
-            });
-        }
+            return res.status(400).json({ success: false, message: "Invalid status" });
+        };
 
         const validPaymentStatuses = ["pending", "paid", "failed"];
         if (paymentStatus && !validPaymentStatuses.includes(paymentStatus)) {
-            return res.json({
-                success: false,
-                message: "Invalid payment status",
-            });
-        }
+            return res.status(400).json({ success: false, message: "Invalid payment status" });
+        };
 
         const order = await orderModel.findById(orderId);
         if (!order) {
-            return res.json({
-                success: false,
-                message: "Order not found",
-            });
-        }
+            return res.status(400).json({ success: false, message: "Order not found" });
+        };
 
         order.status = status;
         if (paymentStatus) {
@@ -300,18 +279,11 @@ const updateOrderStatus = async (req, res) => {
         order.updatedAt = Date.now();
         await order.save();
 
-        res.json({
-            success: true,
-            message: "Order updated successfully",
-            order,
-        });
+        return res.status(200).json({ success: true, message: "Order updated successfully", order });
     } catch (error) {
         console.error("Update Order Status Error:", error);
-        res.json({
-            success: false,
-            message: error.message,
-        });
-    }
+        return res.status(400).json({ success: false, message: error.message });
+    };
 };
 
 // Get order statistics (Admin Dashboard)
@@ -360,7 +332,7 @@ const getOrderStats = async (req, res) => {
             { $sort: { "_id.year": 1, "_id.month": 1 } },
         ]);
 
-        res.json({
+        return res.status(200).json({
             success: true,
             stats: {
                 totalOrders,
@@ -374,11 +346,8 @@ const getOrderStats = async (req, res) => {
         });
     } catch (error) {
         console.error("Get Order Stats Error:", error);
-        res.json({
-            success: false,
-            message: error.message,
-        });
-    }
+        return res.status(400).json({ success: false, message: error.message });
+    };
 };
 
 // Delete order (Admin)
@@ -387,39 +356,28 @@ const deleteOrder = async (req, res) => {
         const { orderId } = req.body;
 
         if (!orderId) {
-            return res.json({
-                success: false,
-                message: "Order ID is required",
-            });
-        }
+            return res.status(400).json({ success: false, message: "Order ID is required" });
+        };
 
         const order = await orderModel.findById(orderId);
         if (!order) {
-            return res.json({
-                success: false,
-                message: "Order not found",
-            });
-        }
+            return res.status(400).json({ success: false, message: "Order not found", });
+        };
 
         await orderModel.findByIdAndDelete(orderId);
 
-        res.json({
-            success: true,
-            message: "Order deleted successfully",
-        });
+        return res.status(200).json({ success: true, message: "Order deleted successfully" });
     } catch (error) {
         console.error("Delete Order Error:", error);
-        res.json({
-            success: false,
-            message: error.message,
-        });
-    }
+        return res.status(400).json({ success: false, message: error.message });
+    };
 };
 
 export {
     createOrder,
     getAllOrders,
     getUserOrders,
+    getAdminUserOrdersDetails,
     getUserOrderById,
     updateOrderStatus,
     getOrderStats,

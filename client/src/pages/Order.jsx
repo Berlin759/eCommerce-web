@@ -446,7 +446,7 @@ const Order = () => {
                                                 animate={{ opacity: 1 }}
                                                 transition={{ duration: 0.3 }}
                                                 className="hover:bg-gray-50"
-                                                // onClick={() => openOrderModal(order)}
+                                            // onClick={() => openOrderModal(order)}
                                             >
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="text-sm font-medium text-gray-900">
@@ -456,7 +456,6 @@ const Order = () => {
                                                             title="Order Details"
                                                             onClick={(e) => e.stopPropagation()}
                                                         >
-                                                            {/* <FaShoppingBag className="w-4 h-4" /> */}
                                                             #{order._id.slice(-8).toUpperCase()}
                                                         </Link>
                                                     </div>
@@ -550,6 +549,14 @@ const Order = () => {
                                                         >
                                                             <FaEye className="w-4 h-4" />
                                                         </button> */}
+                                                        <Link
+                                                            to={`/checkout/${order._id}`}
+                                                            className="text-blue-600 hover:text-blue-900 transition-colors"
+                                                            title="Order Details"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <FaEye className="w-4 h-4" />
+                                                        </Link>
                                                         <button
                                                             onClick={(e) => handleAddOrderToCart(order, e)}
                                                             className="text-green-600 hover:text-green-900 transition-colors"
@@ -557,14 +564,6 @@ const Order = () => {
                                                         >
                                                             <FaShoppingCart className="w-4 h-4" />
                                                         </button>
-                                                        <Link
-                                                            to={`/checkout/${order._id}`}
-                                                            className="text-gray-600 hover:text-gray-900 transition-colors"
-                                                            title="Order Details"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        >
-                                                            <FaShoppingBag className="w-4 h-4" />
-                                                        </Link>
                                                         {order.paymentStatus === "pending" && (
                                                             <Link
                                                                 to={`/checkout/${order._id}`}
