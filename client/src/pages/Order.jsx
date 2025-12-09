@@ -445,12 +445,20 @@ const Order = () => {
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
                                                 transition={{ duration: 0.3 }}
-                                                className="hover:bg-gray-50 cursor-pointer"
-                                                onClick={() => openOrderModal(order)}
+                                                className="hover:bg-gray-50"
+                                                // onClick={() => openOrderModal(order)}
                                             >
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="text-sm font-medium text-gray-900">
-                                                        #{order._id.slice(-8).toUpperCase()}
+                                                        <Link
+                                                            to={`/checkout/${order._id}`}
+                                                            className="text-gray-600 hover:text-gray-900 transition-colors"
+                                                            title="Order Details"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            {/* <FaShoppingBag className="w-4 h-4" /> */}
+                                                            #{order._id.slice(-8).toUpperCase()}
+                                                        </Link>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -532,7 +540,7 @@ const Order = () => {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                     <div className="flex gap-2">
-                                                        <button
+                                                        {/* <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 openOrderModal(order);
@@ -541,7 +549,7 @@ const Order = () => {
                                                             title="View Details"
                                                         >
                                                             <FaEye className="w-4 h-4" />
-                                                        </button>
+                                                        </button> */}
                                                         <button
                                                             onClick={(e) => handleAddOrderToCart(order, e)}
                                                             className="text-green-600 hover:text-green-900 transition-colors"
