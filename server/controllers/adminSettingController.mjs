@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import userModel from "../models/userModel.js";
+import settingModel from "../models/settingModel.js";
 
 const getAdminProfile = async (req, res) => {
     try {
@@ -7,13 +8,33 @@ const getAdminProfile = async (req, res) => {
         const adminDetails = await userModel.findById(adminId).select("-password -__v");
 
         if (!adminDetails) {
-            return res.json({ success: false, message: "Admin not found" });
+            return res.status(400).json({ success: false, message: "Admin not found" });
         };
 
-        res.json({ success: true, admin: adminDetails });
+        return res.status(200).json({ success: true, admin: adminDetails });
     } catch (error) {
         console.error("Get Admin Profile Error", error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
+    };
+};
+
+const getSettingDetails = async (req, res) => {
+    try {
+        const adminId = req.user._id;
+        if (!adminId) {
+            return res.status(400).json({ success: false, message: "Admin not found" });
+        };
+
+        const settingDetails = await settingModel.findOne({ adminId: adminId });
+
+        if (!settingDetails) {
+            return res.status(400).json({ success: false, message: "Setting Details not found" });
+        };
+
+        return res.status(200).json({ success: true, setting: settingDetails });
+    } catch (error) {
+        console.error("Get Setting Details Error", error);
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -69,7 +90,43 @@ const changePassword = async (req, res) => {
     };
 };
 
+const updateDiscountedPercentage = async (req, res) => {
+    try {
+        const adminId = req.user._id;
+        const { discountedPercentage } = req.body;
+
+        if (!discountedPercentage || discountedPercentage === "") {
+            return res.status(400).json({ success: false, message: "Please Enter Discounted Percentage" });
+        };
+
+        const adminDetails = await userModel.findById(adminId);
+        if (!adminDetails) {
+            return res.status(400).json({ success: false, message: "Admin details not found" });
+        };
+
+        const updatePayload = {
+            discountedPercentage: discountedPercentage,
+        };
+
+        const updateDisPercentage = await settingModel.findOneAndUpdate(
+            { adminId: adminDetails._id },
+            { $set: updatePayload },
+            { new: true },
+        );
+        if (!updateDisPercentage) {
+            return res.status(400).json({ success: false, message: "Discount Percentage Update Failed" });
+        };
+
+        return res.status(200).json({ success: true, message: "Discount Percentage Update Successfully" });
+    } catch (error) {
+        console.error("Discount Percentage Error", error);
+        return res.status(400).json({ success: false, message: error.message });
+    };
+};
+
 export {
-    changePassword,
     getAdminProfile,
+    getSettingDetails,
+    changePassword,
+    updateDiscountedPercentage,
 };

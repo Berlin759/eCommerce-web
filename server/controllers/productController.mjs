@@ -19,6 +19,7 @@ const addProduct = async (req, res) => {
         const {
             _type,
             name,
+            mrp,
             price,
             discountedPercentage,
             stock,
@@ -35,11 +36,11 @@ const addProduct = async (req, res) => {
         const image3 = req.files.image3 && req.files.image3[0];
         const image4 = req.files.image4 && req.files.image4[0];
 
-        if (!name || !price || !category || !description) {
+        if (!name || !mrp || !price || !category || !description) {
             return res.status(400).json({
                 success: false,
                 message:
-                    "Missing required fields: name, price, category, and description are mandatory.",
+                    "Missing required fields: name, mrp, price, category, and description are mandatory.",
             });
         };
 
@@ -80,6 +81,7 @@ const addProduct = async (req, res) => {
         const productData = {
             _type: _type ? _type : "",
             name,
+            mrp: Number(mrp),
             price: Number(price),
             discountedPercentage: discountedPercentage
                 ? Number(discountedPercentage)
@@ -356,6 +358,7 @@ const updateProduct = async (req, res) => {
         const {
             _type,
             name,
+            mrp,
             price,
             discountedPercentage,
             stock,
@@ -383,11 +386,11 @@ const updateProduct = async (req, res) => {
         }
 
         // Check for required fields
-        if (!name || !price || !category || !description) {
+        if (!name || !mrp || !price || !category || !description) {
             return res.status(400).json({
                 success: false,
                 message:
-                    "Missing required fields: name, price, category, and description are mandatory.",
+                    "Missing required fields: name, mrp, price, category, and description are mandatory.",
             });
         }
 
@@ -448,6 +451,7 @@ const updateProduct = async (req, res) => {
         const updateData = {
             _type: _type || "",
             name,
+            mrp: Number(mrp),
             price: Number(price),
             discountedPercentage: discountedPercentage
                 ? Number(discountedPercentage)

@@ -1,4 +1,11 @@
 // Stock management helper functions
+import {
+    FaClock,
+    FaCheckCircle,
+    FaTruck,
+    FaBox,
+    FaTimes,
+} from "react-icons/fa";
 
 /**
  * Process checkout and update product stock
@@ -75,6 +82,76 @@ export const getStockStatus = (product) => {
     return "In Stock";
 };
 
+export const getOrderStatusColorAndIcon = (status) => {
+    switch (status) {
+        case "pending":
+            return {
+                color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+                icon: FaClock,
+                iconColor: "text-yellow-600",
+            };
+        case "confirmed":
+            return {
+                color: "bg-blue-100 text-blue-800 border-blue-200",
+                icon: FaCheckCircle,
+                iconColor: "text-blue-600",
+            };
+        case "shipped":
+            return {
+                color: "bg-purple-100 text-purple-800 border-purple-200",
+                icon: FaTruck,
+                iconColor: "text-purple-600",
+            };
+        case "delivered":
+            return {
+                color: "bg-green-100 text-green-800 border-green-200",
+                icon: FaBox,
+                iconColor: "text-green-600",
+            };
+        case "cancelled":
+            return {
+                color: "bg-red-100 text-red-800 border-red-200",
+                icon: FaTimes,
+                iconColor: "text-red-600",
+            };
+        default:
+            return {
+                color: "bg-gray-100 text-gray-800 border-gray-200",
+                icon: FaClock,
+                iconColor: "text-gray-600",
+            };
+    };
+};
+
+export const getPaymentStatusColorAndIcon = (status) => {
+    switch (status) {
+        case "pending":
+            return {
+                color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+                icon: FaClock,
+                iconColor: "text-yellow-600",
+            };
+        case "paid":
+            return {
+                color: "bg-green-100 text-green-800 border-green-200",
+                icon: FaCheckCircle,
+                iconColor: "text-green-600",
+            };
+        case "failed":
+            return {
+                color: "bg-red-100 text-red-800 border-red-200",
+                icon: FaTimes,
+                iconColor: "text-red-600",
+            };
+        default:
+            return {
+                color: "bg-gray-100 text-gray-800 border-gray-200",
+                icon: FaClock,
+                iconColor: "text-gray-600",
+            };
+    };
+};
+
 /**
  * Calculate discounted price
  * @param {number} price - Original price
@@ -83,5 +160,20 @@ export const getStockStatus = (product) => {
  */
 export const calculateDiscountedPrice = (price, discountPercentage = 10) => {
     const discountAmount = (price * discountPercentage) / 100;
-    return price - discountAmount;
+    const remainingAmount = price - discountAmount;
+
+    return { discountAmount, remainingAmount };
+};
+
+/**
+ * Calculate Percentage
+ * @param {number} mrp - Original price
+ * @param {number} price - discount price
+ * @returns {number} - Discounted percentage
+ */
+export const calculateDiscountedPercentage = (firstPrice, secondPrice) => {
+    if (firstPrice === 0) return 0;
+
+    const discountPercentage = (secondPrice * 100) / firstPrice;
+    return discountPercentage;
 };

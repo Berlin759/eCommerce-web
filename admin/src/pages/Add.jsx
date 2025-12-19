@@ -20,8 +20,9 @@ const Add = ({ token }) => {
         _type: "",
         name: "",
         description: "",
+        mrp: "",
         price: "",
-        discountedPercentage: 10,
+        discountedPercentage: 0,
         stock: "",
         category: "",
         offer: false,
@@ -78,6 +79,7 @@ const Add = ({ token }) => {
                 [name]: value === "true",
             });
         } else if (
+            name === "mrp" ||
             name === "price" ||
             name === "discountedPercentage" ||
             name === "stock"
@@ -120,6 +122,7 @@ const Add = ({ token }) => {
         if (
             !formData.name ||
             !formData.description ||
+            !formData.mrp ||
             !formData.price ||
             !formData.stock ||
             !formData.category
@@ -143,6 +146,7 @@ const Add = ({ token }) => {
             data.append("_type", formData._type);
             data.append("name", formData.name);
             data.append("description", formData.description);
+            data.append("mrp", formData.mrp);
             data.append("price", formData.price);
             data.append("discountedPercentage", formData.discountedPercentage);
             data.append("stock", formData.stock);
@@ -330,7 +334,21 @@ const Add = ({ token }) => {
                             </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                                 <div className="flex flex-col">
-                                    <Label htmlFor="price">Price *</Label>
+                                    <Label htmlFor="mrp">MRP *</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                        name="mrp"
+                                        value={formData.mrp}
+                                        onChange={handleChange}
+                                        className="mt-1"
+                                        required
+                                    />
+                                </div>
+                                <div className="flex flex-col">
+                                    <Label htmlFor="price">Discount Price *</Label>
                                     <Input
                                         type="number"
                                         step="0.01"
@@ -341,22 +359,6 @@ const Add = ({ token }) => {
                                         onChange={handleChange}
                                         className="mt-1"
                                         required
-                                    />
-                                </div>
-
-                                <div className="flex flex-col">
-                                    <Label htmlFor="discountedPercentage">
-                                        Discount Percentage
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        placeholder="10"
-                                        name="discountedPercentage"
-                                        value={formData.discountedPercentage}
-                                        onChange={handleChange}
-                                        className="mt-1"
                                     />
                                 </div>
 
@@ -373,6 +375,22 @@ const Add = ({ token }) => {
                                         required
                                     />
                                 </div>
+
+                                {/* <div className="flex flex-col">
+                                    <Label htmlFor="discountedPercentage">
+                                        Online Payment Discount (in %)
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        placeholder="0"
+                                        name="discountedPercentage"
+                                        value={formData.discountedPercentage}
+                                        onChange={handleChange}
+                                        className="mt-1"
+                                    />
+                                </div> */}
                             </div>
                         </div>
 

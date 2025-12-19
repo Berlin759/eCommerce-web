@@ -1,19 +1,45 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { serverUrl } from "../../config";
 import { FaCog, FaUser, FaDatabase, FaShieldVirus, FaBell } from "react-icons/fa";
-import { MdSecurity, MdNotifications } from "react-icons/md";
+import Title from "../components/ui/title";
+import Input, { Label } from "../components/ui/input";
+import { serverUrl } from "../../config";
+import SkeletonLoader from "../components/SkeletonLoader";
 import { passwordValidation } from "../utils/general.lib";
+import api from "../api/axiosInstance";
 
 const Settings = ({ token }) => {
+    const [isSettingLoading, setSettingLoading] = useState(false);
+    const [isPercentageLoading, setPercentageLoading] = useState(false);
     const [isLoading, setLoading] = useState(false);
+    const [discountedPercentage, setDiscountedPercentage] = useState(0);
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showOldPassword, setShowOldPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    // Fetch all setting
+    const fetchSetting = async () => {
+        try {
+            setSettingLoading(true);
+            const response = await api.get(`${serverUrl}/api/setting/list`);
+
+            const data = response.data;
+            if (data.success) {
+                setDiscountedPercentage(data.setting.discountedPercentage);
+            } else {
+                toast.error(data.message || "Failed to fetch settings");
+            };
+        } catch (error) {
+            console.error("Error fetching settings:", error);
+            toast.error("Failed to load settings");
+        } finally {
+            setSettingLoading(false);
+        }
+    };
 
     const handlePasswordChange = async (e) => {
         try {
@@ -87,6 +113,45 @@ const Settings = ({ token }) => {
             toast.error(error?.message);
         } finally {
             setLoading(false);
+        };
+    };
+
+    const handleOnlinePaymentDiscount = async (e) => {
+        try {
+            e.preventDefault();
+
+            if (!discountedPercentage || discountedPercentage === "") {
+                toast.error("Please Enter Discounted Percentage");
+                return;
+            };
+
+            const payload = {
+                discountedPercentage: discountedPercentage,
+            };
+
+            setPercentageLoading(true);
+
+            const response = await axios.put(
+                `${serverUrl}/api/setting/update-discounted-percentage`,
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
+            );
+
+            const data = response?.data;
+            if (data?.success) {
+                toast.success(data?.message);
+            } else {
+                toast.error(data?.message);
+            };
+        } catch (error) {
+            console.error("update discounted percentage Error-------->", error);
+            toast.error(error?.message);
+        } finally {
+            setPercentageLoading(false);
         };
     };
 
@@ -179,6 +244,21 @@ const Settings = ({ token }) => {
         }
     };
 
+    useEffect(() => {
+        fetchSetting();
+    }, []);
+
+    if (isSettingLoading) {
+        return (
+            <div>
+                <Title>Setting Details</Title>
+                <div className="mt-6">
+                    <SkeletonLoader type="settings" />
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="p-6">
             <div className="mb-8">
@@ -186,6 +266,45 @@ const Settings = ({ token }) => {
                 <p className="text-gray-600">
                     Manage your system configuration and preferences
                 </p>
+            </div>
+
+            {/* Online Payment Discount Setting */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
+                <div className="p-6 border-b border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900">Online Payment Discount Percentage</h3>
+                </div>
+                <div className="p-6">
+                    <form
+                        onSubmit={handleOnlinePaymentDiscount}
+                        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                    >
+                        <div className="flex flex-col relative">
+                            <Label htmlFor="discountedPercentage">
+                                Discount Percentage(in %)
+                            </Label>
+                            <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                placeholder="0"
+                                name="discountedPercentage"
+                                value={discountedPercentage}
+                                onChange={(e) => setDiscountedPercentage(e.target.value)}
+                                className="mt-1"
+                            />
+                        </div>
+
+                        <div className="md:col-span-3 flex justify-end mt-4">
+                            <button
+                                type="submit"
+                                disabled={isPercentageLoading}
+                                className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+                            >
+                                {isPercentageLoading ? "Submitting..." : "Update Percentage"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             {/* Change Password */}

@@ -3,7 +3,6 @@ import {
     createPaymentIntent,
     confirmPayment,
     handleStripeWebhook,
-    createOrder,
     createRazorpayOrder,
     verifyRazorpayPayment,
     handleRazorpayWebhook,
@@ -14,9 +13,6 @@ import userAuth from "../middleware/userAuth.js";
 const router = express.Router();
 
 const routeValue = "/api/payment/";
-
-// Create order
-router.post("/api/order/create", userAuth, createOrder);
 
 // Stripe payment routes
 router.post(

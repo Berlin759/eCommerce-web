@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Container from "../components/Container";
 import PriceFormat from "../components/PriceFormat";
-import StripePayment from "../components/StripePayment";
 import RazorpayPayment from "../components/RazorpayPayment";
 import toast from "react-hot-toast";
 import {
@@ -18,20 +17,35 @@ import {
 } from "react-icons/fa";
 import { serverUrl } from "../../config";
 import api from "../api/axiosInstance";
+import { calculateDiscountedPercentage } from "../helpers/stockManager";
 
 const Checkout = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
     const [order, setOrder] = useState(null);
+    const [discountAmount, setDiscountAmount] = useState(0);
+    const [discountPercentage, setDiscountPercentage] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [paymentStep, setPaymentStep] = useState("selection"); // 'selection', 'stripe', 'Razorpay', 'processing'
+    const [paymentStep, setPaymentStep] = useState("selection");
+    const [chosenMethod, setChosenMethod] = useState(null);
+    const [otpModal, setOtpModal] = useState(false);
+    const [otp, setOtp] = useState("")
+    const [otpSent, setOtpSent] = useState(false);
 
     const fetchOrderDetails = useCallback(async () => {
         try {
             const response = await api.get(`${serverUrl}/api/order/user/${orderId}`);
             const data = response.data;
             if (data.success) {
+                const orderAmount = data.order.amount;
+                const disAmount = data.order.discountAmount;
+                const discount_amount_count = orderAmount - disAmount;
+
+                const percentageCount = calculateDiscountedPercentage(orderAmount, discount_amount_count);
+
                 setOrder(data.order);
+                setDiscountPercentage(percentageCount);
+                setDiscountAmount(discount_amount_count);
             } else {
                 toast.error("Order not found");
                 navigate("/orders");
@@ -45,47 +59,84 @@ const Checkout = () => {
         }
     }, [orderId, navigate]);
 
+    const handleCashOnDelivery = async () => {
+        setChosenMethod("cod");
+        setPaymentStep("cod");
+
+        try {
+            const response = await api.post(`${serverUrl}/api/order/updateCashOnDelivery`, {
+                orderId: orderId,
+            });
+
+            const data = response.data;
+            if (data.success) {
+                toast.success(data.message || "Your Order has been Confirmed");
+                navigate(`/payment-success?order_id=${orderId}`);
+            } else {
+                console.error("handleCashOnDelivery error--->", data.message);
+                toast.error(data.message || "Failed to Cash On Delivery");
+            };
+        } catch (error) {
+            console.error("Error handle OTP Send:", error);
+            toast.error("Error sending OTP");
+        };
+    };
+
+    const handleOTPSend = async () => {
+        try {
+            const response = await api.post(`${serverUrl}/api/order/send-otp`, {
+                orderId: orderId,
+                phone: order.address.phone,
+            });
+
+            const data = response.data;
+            if (data.success) {
+                toast.success(data.message);
+                setOtpModal(true);
+                setOtpSent(true);
+            } else {
+                console.error("handleOTPSend error--->", data.message);
+                toast.error(data.message || "Failed to send OTP");
+            };
+        } catch (error) {
+            console.error("Error handle OTP Send:", error);
+            toast.error("Error sending OTP");
+        };
+    };
+
+    const handleVerifyOTP = async () => {
+        try {
+            const response = await api.post(`${serverUrl}/api/order/verify-otp`, {
+                orderId: orderId,
+                otp: otp,
+            });
+
+            const data = response.data;
+            if (data.success) {
+                toast.success("OTP verified! COD Order Confirmed");
+                navigate(`/payment-success?order_id=${orderId}`);
+            } else {
+                console.error("handleVerifyOTP error--->", data.message);
+                toast.error(data.message || "OTP verification failed");
+            };
+        } catch (error) {
+            console.error("Error handle Verify OTP---------->", error);
+            toast.error("OTP verification failed");
+        };
+    };
+
     useEffect(() => {
         if (orderId) {
             fetchOrderDetails();
         }
     }, [orderId, fetchOrderDetails]);
 
-    const handlePayment = async (paymentMethod) => {
-        if (paymentMethod === "stripe") {
-            setPaymentStep("stripe");
-        } else if (paymentMethod === "razorpay") {
-            setPaymentStep("razorpay");
-        } else if (paymentMethod === "cod") {
-            toast.success("Order confirmed with Cash on Delivery");
-        };
-    };
-
-    const handleStripeSuccess = (paymentIntentId) => {
-        // Redirect to success page with payment details
-        navigate(
-            `/payment-success?order_id=${orderId}&payment_intent=${paymentIntentId}`
-        );
-    };
-
-    const handleStripeCancel = () => {
-        setPaymentStep("selection");
-    };
-    
     const handleRazorpaySuccess = (paymentIntentId) => {
-        // Redirect to success page with payment details
-        navigate(
-            `/payment-success?order_id=${orderId}&payment_intent=${paymentIntentId}`
-        );
+        navigate(`/payment-success?order_id=${orderId}&payment_intent=${paymentIntentId}`);
     };
 
     const handleRazorpayCancel = () => {
         setPaymentStep("selection");
-    };
-
-    const handlePayOnline = () => {
-        // setPaymentStep("stripe");
-        setPaymentStep("razorpay");
     };
 
     const getStatusColor = (status) => {
@@ -186,8 +237,7 @@ const Checkout = () => {
                                             order.status
                                         )}`}
                                     >
-                                        {order.status.charAt(0).toUpperCase() +
-                                            order.status.slice(1)}
+                                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                     </span>
                                 </div>
                                 <div className="flex items-center space-x-2">
@@ -199,8 +249,17 @@ const Checkout = () => {
                                             order.paymentStatus
                                         )}`}
                                     >
-                                        {order.paymentStatus.charAt(0).toUpperCase() +
-                                            order.paymentStatus.slice(1)}
+                                        {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+                                    </span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-sm font-medium text-gray-700">
+                                        Payment Method:
+                                    </span>
+                                    <span
+                                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-green-100 text-green-800 border-green-200"
+                                    >
+                                        {order.paymentMethod.charAt(0).toUpperCase() + order.paymentMethod.slice(1)}
                                     </span>
                                 </div>
                                 <div className="flex items-center space-x-2">
@@ -312,16 +371,24 @@ const Checkout = () => {
                                     <span className="text-gray-600">Shipping</span>
                                     <span className="font-medium text-green-600">Free</span>
                                 </div>
+                                {order.paymentMethod === "online" && (
+                                    <div className="flex justify-between text-lg font-semibold">
+                                        <span className="text-gray-900">discount ({discountPercentage}% off)</span>
+                                        <span className="text-gray-900">
+                                            <PriceFormat amount={discountAmount} />
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between text-lg font-semibold">
                                     <span className="text-gray-900">Total</span>
                                     <span className="text-gray-900">
-                                        <PriceFormat amount={order.amount} />
+                                        <PriceFormat amount={order.paymentMethod === "online" ? order.discountAmount : order.amount} />
                                     </span>
                                 </div>
                             </div>
 
                             {/* Payment Options */}
-                            {order.paymentStatus === "pending" && (
+                            {order.paymentStatus === "pending" && order.paymentMethod === "" && (
                                 <div className="space-y-4">
                                     {paymentStep === "selection" && (
                                         <>
@@ -329,83 +396,28 @@ const Checkout = () => {
                                                 Choose Payment Method
                                             </h3>
 
-                                            {order.paymentMethod === "cod" ? (
-                                                <div className="space-y-3">
-                                                    {/* <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                                                        <div className="flex items-center gap-3">
-                                                            <FaMoneyBillWave className="w-6 h-6 text-green-600" />
-                                                            <div>
-                                                                <h4 className="font-semibold text-green-800">
-                                                                    Cash on Delivery
-                                                                </h4>
-                                                                <p className="text-sm text-green-700">
-                                                                    Pay when your order is delivered
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </div> */}
+                                            <button
+                                                onClick={() => {
+                                                    setChosenMethod("online");
+                                                    setPaymentStep("online");
+                                                }}
+                                                className="w-full flex items-center justify-center gap-3 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                            >
+                                                <FaCreditCard className="w-5 h-5" />
+                                                Pay Online <span className="font-bold">({order.onlinePaydisPercentage}% Off)</span>
+                                            </button>
 
-                                                    <button
-                                                        onClick={handlePayOnline}
-                                                        className="w-full flex items-center justify-center gap-3 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                                                    >
-                                                        <FaCreditCard className="w-5 h-5" />
-                                                        Pay Online Now
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <button
-                                                        onClick={() => handlePayment("stripe")}
-                                                        className="w-full flex items-center justify-center gap-3 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                                                    >
-                                                        <FaCreditCard className="w-5 h-5" />
-                                                        Pay with Stripe Card
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() => handlePayment("razorpay")}
-                                                        className="w-full flex items-center justify-center gap-3 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                                                    >
-                                                        <FaCreditCard className="w-5 h-5" />
-                                                        Pay with Razorpay Card
-                                                    </button>
-
-                                                    {/* <button
-                                                        onClick={() => handlePayment("cod")}
-                                                        className="w-full flex items-center justify-center gap-3 bg-gray-100 text-gray-900 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                                                    >
-                                                        <FaMoneyBillWave className="w-5 h-5" />
-                                                        Cash on Delivery
-                                                    </button> */}
-                                                </>
-                                            )}
+                                            <button
+                                                onClick={handleCashOnDelivery}
+                                                className="w-full flex items-center justify-center gap-3 bg-gray-100 text-gray-900 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                                            >
+                                                <FaMoneyBillWave className="w-5 h-5" />
+                                                Cash on Delivery
+                                            </button>
                                         </>
                                     )}
 
-                                    {paymentStep === "stripe" && (
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <button
-                                                    onClick={handleStripeCancel}
-                                                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                                                >
-                                                    <FaArrowLeft className="w-4 h-4 text-gray-600" />
-                                                </button>
-                                                <h3 className="text-lg font-semibold text-gray-900">
-                                                    Payment Details
-                                                </h3>
-                                            </div>
-
-                                            <StripePayment
-                                                orderId={orderId}
-                                                amount={order.amount}
-                                                onSuccess={handleStripeSuccess}
-                                                onCancel={handleStripeCancel}
-                                            />
-                                        </div>
-                                    )}
-                                    {paymentStep === "razorpay" && (
+                                    {paymentStep === "online" && (
                                         <div className="space-y-4">
                                             <div className="flex items-center gap-3 mb-4">
                                                 <button
@@ -422,11 +434,47 @@ const Checkout = () => {
                                             <RazorpayPayment
                                                 orderId={orderId}
                                                 amount={order.amount}
+                                                onlinePayDisPercentage={order.onlinePaydisPercentage}
                                                 onSuccess={handleRazorpaySuccess}
                                                 onCancel={handleRazorpayCancel}
                                             />
                                         </div>
                                     )}
+
+                                    {paymentStep === "cod" && (
+                                        <div className="space-y-4">
+                                            {/* <button
+                                                onClick={handleOTPSend}
+                                                className="w-full bg-green-600 text-white py-3 rounded-lg"
+                                            >
+                                                Send OTP
+                                            </button>
+
+                                            <button
+                                                onClick={() => setPaymentStep("selection")}
+                                                className="w-full bg-gray-200 py-3 rounded-lg"
+                                            >
+                                                Back
+                                            </button> */}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+
+                            {order.paymentStatus === "pending" && order.paymentMethod === "cod" && (
+                                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                    <div className="flex items-center gap-3">
+                                        <FaMoneyBillWave className="w-6 h-6 text-green-600" />
+                                        <div>
+                                            <h4 className="font-semibold text-green-800">
+                                                Cash on Delivery
+                                            </h4>
+                                            <p className="text-sm text-green-700">
+                                                Pay when your order is delivered
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
@@ -442,6 +490,36 @@ const Checkout = () => {
                                                 Your payment has been processed successfully
                                             </p>
                                         </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {otpModal && (
+                                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                    <div className="bg-white p-6 rounded-lg shadow-lg w-80">
+                                        <h2 className="text-lg font-semibold mb-3">Verify OTP</h2>
+
+                                        <input
+                                            type="text"
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value)}
+                                            placeholder="Please Enter OTP"
+                                            className="w-full border p-2 rounded-lg mb-4"
+                                        />
+
+                                        <button
+                                            onClick={handleVerifyOTP}
+                                            className="w-full bg-green-600 text-white py-2 rounded-lg mb-2"
+                                        >
+                                            Verify OTP
+                                        </button>
+
+                                        <button
+                                            onClick={() => setOtpModal(false)}
+                                            className="w-full bg-gray-200 py-2 rounded-lg"
+                                        >
+                                            Cancel
+                                        </button>
                                     </div>
                                 </div>
                             )}

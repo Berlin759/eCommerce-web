@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { serverUrl } from "../../config";
+import { getOrderStatusColorAndIcon, getPaymentStatusColorAndIcon } from "../helpers/stockManager";
 import api from "../api/axiosInstance";
 
 const PaymentSuccess = () => {
@@ -61,7 +62,7 @@ const PaymentSuccess = () => {
         };
 
         confirmPaymentAndFetchOrder();
-    // }, [orderId, paymentIntentId, navigate]);
+        // }, [orderId, paymentIntentId, navigate]);
     }, [orderId, navigate]);
 
     const handlePrint = () => {
@@ -117,6 +118,12 @@ const PaymentSuccess = () => {
             </div>
         );
     }
+
+    const paymentUI = getPaymentStatusColorAndIcon(order.paymentStatus);
+    const PaymentStatusIcon = paymentUI.icon;
+
+    const orderStatusUI = getOrderStatusColorAndIcon(order.status);
+    const OrderStatusIcon = orderStatusUI.icon;
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -216,28 +223,40 @@ const PaymentSuccess = () => {
                                     Payment Details
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-green-50 rounded-lg p-4">
+                                    <div className={`${paymentUI.color} rounded-lg p-4`}>
                                         <div className="flex items-center gap-3">
-                                            <FaCheckCircle className="w-5 h-5 text-green-600" />
+                                            <div>
+                                                <div className="text-sm font-medium text-green-800">
+                                                    Payment Method
+                                                </div>
+                                                <div className="text-lg font-bold text-green-900 uppercase">
+                                                    {order.paymentMethod}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className={`${paymentUI.color} rounded-lg p-4`}>
+                                        <div className="flex items-center gap-3">
+                                            <PaymentStatusIcon className={`w-5 h-5 ${paymentUI.iconColor}`} />
                                             <div>
                                                 <div className="text-sm font-medium text-green-800">
                                                     Payment Status
                                                 </div>
-                                                <div className="text-lg font-bold text-green-900">
-                                                    PAID
+                                                <div className="text-lg font-bold text-green-900 uppercase">
+                                                    {order.paymentStatus}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="bg-blue-50 rounded-lg p-4">
                                         <div className="flex items-center gap-3">
-                                            <FaTruck className="w-5 h-5 text-blue-600" />
+                                            <OrderStatusIcon className={`w-5 h-5 ${orderStatusUI.iconColor}`} />
                                             <div>
                                                 <div className="text-sm font-medium text-blue-800">
                                                     Order Status
                                                 </div>
-                                                <div className="text-lg font-bold text-blue-900">
-                                                    CONFIRMED
+                                                <div className="text-lg font-bold text-blue-900 uppercase">
+                                                    {order.status}
                                                 </div>
                                             </div>
                                         </div>
@@ -246,7 +265,7 @@ const PaymentSuccess = () => {
                                 <div className="mt-4 pt-4 border-t border-gray-200">
                                     <div className="flex items-center gap-2 text-sm text-gray-600">
                                         <FaCalendarAlt className="w-4 h-4" />
-                                        <span>Paid on {new Date().toLocaleDateString()}</span>
+                                        <span>Paid on {new Date(order.date).toLocaleDateString()}</span>
                                     </div>
                                 </div>
                             </motion.div>
@@ -380,7 +399,7 @@ const PaymentSuccess = () => {
                                     <div className="flex justify-between text-lg font-semibold">
                                         <span className="text-gray-900">Total Paid</span>
                                         <span className="text-green-600">
-                                            <PriceFormat amount={order.amount} />
+                                            <PriceFormat amount={order.paymentMethod === "online" ? order.discountAmount : order.amount} />
                                         </span>
                                     </div>
                                 </div>

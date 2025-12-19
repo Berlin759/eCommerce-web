@@ -55,6 +55,10 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    discountAmount: {
+        type: Number,
+        default: 0,
+    },
     currency: {
         type: String,
         default: "INR",
@@ -104,8 +108,8 @@ const orderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ["cod", "stripe", "razorpay"],
-        default: "razorpay",
+        enum: ["", "cod", "online"],
+        default: "",
     },
     paymentStatus: {
         type: String,
@@ -127,7 +131,6 @@ orderSchema.pre("save", function (next) {
     next();
 });
 
-const orderModel =
-    mongoose.models.order || mongoose.model("order", orderSchema);
+const orderModel = mongoose.models.order || mongoose.model("order", orderSchema);
 
 export default orderModel;

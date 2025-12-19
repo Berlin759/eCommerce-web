@@ -1,10 +1,11 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import toast from "react-hot-toast";
-import { serverUrl } from "../../config";
 import { FaCreditCard, FaLock, FaSpinner } from "react-icons/fa";
-import { loadStripe } from "@stripe/stripe-js";
+import { serverUrl } from "../../config";
 import api from "../api/axiosInstance";
+import { calculateDiscountedPrice } from "../helpers/stockManager";
+import PriceFormat from "../components/PriceFormat";
 
 // Razorpay script loader
 const loadRazorpay = () => {
@@ -17,13 +18,10 @@ const loadRazorpay = () => {
     });
 };
 
-// Initialize Stripe
-// Make sure to call `loadStripe` outside of a component's render to avoid
-// recreating the `Stripe` object on every render.
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-
-const RazorpayPayment = ({ orderId, amount, onSuccess, onCancel }) => {
+const RazorpayPayment = ({ orderId, amount, onlinePayDisPercentage, onSuccess, onCancel }) => {
     const [isProcessing, setIsProcessing] = useState(false);
+
+    const finalAmount = onlinePayDisPercentage > 0 ? calculateDiscountedPrice(amount, onlinePayDisPercentage).remainingAmount : amount;
 
     const handlePayment = async (e) => {
         e.preventDefault();
@@ -40,59 +38,75 @@ const RazorpayPayment = ({ orderId, amount, onSuccess, onCancel }) => {
         try {
             const response = await api.post(
                 `${serverUrl}/api/payment/razorpay/create-payment-link`,
-                { orderId: orderId },
+                {
+                    orderId: orderId,
+                    finalAmount: finalAmount,
+                },
             );
 
             const data = response.data;
 
-            if (data.success) {
-                window.location.href = data.paymentLink;
-            } else {
-                toast.error(data.message || "Failed to initiate payment");
-                setIsProcessing(false);
-                return;
+            // if (data.success) {
+            //     window.location.href = data.paymentLink;
+            // } else {
+            //     toast.error(data.message || "Failed to initiate payment");
+            //     setIsProcessing(false);
+            //     return;
+            // };
+
+            const { razorpayOrderId, amount: orderAmount, currency, name } = data;
+
+            const options = {
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+                amount: orderAmount,
+                currency: currency,
+                name: name || "Payment",
+                description: `Payment for Order #${orderId.slice(-8).toUpperCase()}`,
+                order_id: razorpayOrderId,
+
+                handler: async function (response) {
+                    const verifyRes = await api.post(
+                        `${serverUrl}/api/payment/razorpay/verify-payment`,
+                        {
+                            orderId,
+                            orderAmount: orderAmount,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                        },
+                    );
+
+                    if (verifyRes.data.success) {
+                        // toast.success("Payment successful!");
+                        onSuccess(response.razorpay_payment_id);
+                    } else {
+                        toast.error("Payment verification failed");
+                    };
+                },
+
+                prefill: {
+                    email: "berlin@gmail.com",
+                    contact: "Berlin@123456",
+                },
+
+                method: {
+                    upi: true,
+                    card: true,
+                    netbanking: true,
+                    wallet: true,
+                    bank_transfer: true,
+
+                    emi: false,
+                    paylater: false,
+                    cardless_emi: false,
+                },
+
+                theme: {
+                    color: "#2563eb",
+                },
             };
 
-            // const { razorpayOrderId, amount: orderAmount, currency, name } = data;
-
-            // const options = {
-            //     key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-            //     amount: orderAmount,
-            //     currency: currency,
-            //     name: name || "Payment",
-            //     description: "Order Payment",
-            //     order_id: razorpayOrderId,
-
-            //     handler: async function (response) {
-            //         const verifyRes = await api.post(
-            //             `${serverUrl}/api/payment/razorpay/verify-payment`,
-            //             {
-        //                     orderId,
-        //                     razorpay_payment_id: response.razorpay_payment_id,
-        //                     razorpay_order_id: response.razorpay_order_id,
-        //                     razorpay_signature: response.razorpay_signature,
-            //             },
-            //         );
-
-            //         const verifyData = verifyRes.data;
-
-            //         if (verifyData.success) {
-            //             toast.success("Payment successful!");
-            //             onSuccess(verifyData.paymentId);
-            //         } else {
-            //             toast.error("Payment verification failed");
-            //         };
-            //     },
-
-            //     prefill: {
-            //         email: "user@example.com",
-            //         contact: "9999999999",
-            //     },
-
-            //     theme: {
-            //         color: "#2563eb",
-            //     },
-            // };
+            new window.Razorpay(options).open();
 
             // const razorpay = new window.Razorpay(options);
             // razorpay.open();
@@ -114,7 +128,21 @@ const RazorpayPayment = ({ orderId, amount, onSuccess, onCancel }) => {
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
                 <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700">Amount to pay</span>
-                    <span className="text-lg font-bold text-gray-900">₹{amount.toFixed(2)}</span>
+                    <span className="text-lg font-bold text-gray-900">
+                        <PriceFormat amount={amount} />
+                    </span>
+                </div>
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">{onlinePayDisPercentage}% off</span>
+                    <span className="text-lg font-bold text-gray-900">
+                        <PriceFormat amount={calculateDiscountedPrice(amount, onlinePayDisPercentage).discountAmount} />
+                    </span>
+                </div>
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">Final Amount to pay</span>
+                    <span className="text-lg font-bold text-gray-900">
+                        <PriceFormat amount={finalAmount} />
+                    </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                     <FaLock className="w-3 h-3" />
@@ -136,7 +164,7 @@ const RazorpayPayment = ({ orderId, amount, onSuccess, onCancel }) => {
                     ) : (
                         <>
                             <FaCreditCard className="w-4 h-4" />
-                            Pay ₹{amount.toFixed(2)}
+                            Pay <PriceFormat amount={finalAmount} />
                         </>
                     )}
                 </button>

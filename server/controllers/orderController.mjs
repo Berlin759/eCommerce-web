@@ -1,6 +1,11 @@
+import { ObjectId } from "mongodb";
+import moment from "moment";
+import { generateOtp, sendOtpOnWhatsApp } from "../config/general.js";
+import Constants from "../constants/index.js";
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
-import productModel from "../models/productModel.js";
+import OTPModel from "../models/otpModel.js";
+import settingModel from "../models/settingModel.js";
 
 // Create a new order
 const createOrder = async (req, res) => {
@@ -123,9 +128,6 @@ const createOrder = async (req, res) => {
                 country: address.country || "",
                 phone: address.phone || address.phoneNumber || "",
             },
-            paymentMethod: "cod", // Default to cash on delivery
-            status: "pending",
-            paymentStatus: "pending",
         });
 
         await newOrder.save();
@@ -152,8 +154,8 @@ const getAllOrders = async (req, res) => {
     try {
         const orders = await orderModel
             .find({})
-            .populate("userId", "name email")
-            .populate("items.productId", "name image")
+            .populate("userId")
+            .populate("items.productId")
             .sort({ date: -1 });
 
         return res.status(200).json({
@@ -181,7 +183,7 @@ const getUserOrders = async (req, res) => {
 
         const orders = await orderModel
             .find({ userId: requestUserId })
-            .populate("items.productId", "name image price")
+            .populate("items.productId")
             .sort({ date: -1 });
 
         return res.status(200).json({
@@ -207,8 +209,8 @@ const getAdminUserOrdersDetails = async (req, res) => {
 
         const order = await orderModel
             .findOne({ _id: orderId })
-            .populate("items.productId", "name image price")
-            .populate("userId", "name email role addresses isActive avatar");
+            .populate("items.productId")
+            .populate("userId");
 
         if (!order) {
             return res.status(400).json({ success: false, message: "Order not found" });
@@ -227,18 +229,150 @@ const getUserOrderById = async (req, res) => {
         const { orderId } = req.params;
         const userId = req.user.id; // From auth middleware
 
+        const settingDetails = await settingModel.findOne({}).select("discountedPercentage");
+
         const order = await orderModel
             .findOne({ _id: orderId, userId })
-            .populate("items.productId", "name image price");
+            .populate("items.productId");
 
         if (!order) {
             return res.status(400).json({ success: false, message: "Order not found" });
         };
 
-        return res.status(200).json({ success: true, order, message: "Order fetched successfully" });
+        const orderObj = order.toObject();
+        orderObj.onlinePaydisPercentage = settingDetails?.discountedPercentage || 0;
+
+        return res.status(200).json({ success: true, order: orderObj, message: "Order fetched successfully" });
     } catch (error) {
         console.error("Get User Order By ID Error:", error);
         return res.status(400).json({ success: false, message: error.message });
+    };
+};
+
+const sendOrderOTP = async (req, res) => {
+    try {
+        const { orderId, phone } = req.body;
+        const userId = req.user.id;
+
+        if (!orderId) {
+            return res.status(400).json({ success: false, message: "Invalid Order Id" });
+        };
+
+        if (!phone) {
+            return res.status(400).json({ success: false, message: "Invalid phone number" });
+        };
+
+        const order = await orderModel.findOne({ _id: orderId, userId });
+
+        if (!order) {
+            return res.status(400).json({ success: false, message: "Order not found" });
+        };
+
+        const otp = await generateOtp();
+        const currentTime = moment().utc().valueOf();
+        const expire_at = moment(currentTime + Constants.OTP_EXPIRATION_TIME).utc().toDate();
+
+        const payload = {
+            userId: new ObjectId(userId),
+            orderId: new ObjectId(orderId),
+            otp: otp,
+            expireAt: expire_at,
+        };
+
+        await OTPModel.create(payload);
+
+        const sendWhatsAppOtp = await sendOtpOnWhatsApp(phone, otp);
+        if (!sendWhatsAppOtp.success) {
+            return res.status(400).json(sendWhatsAppOtp);
+        };
+
+        return res.status(200).json(sendWhatsAppOtp);
+    } catch (error) {
+        console.error("Send Order OTP Error-------->", error);
+        return res.status(400).json({ success: false, message: error.message });
+    };
+};
+
+const verifyOrderOTP = async (req, res) => {
+    try {
+        const { orderId, otp } = req.body;
+        const userId = req.user.id;
+
+        if (!orderId) {
+            return res.status(400).json({ success: false, message: "Invalid Order" });
+        };
+
+        if (!otp) {
+            return res.status(400).json({ success: false, message: "Invalid OTP" });
+        };
+
+        const order = await orderModel.findOne({ _id: orderId, userId });
+
+        if (!order) {
+            return res.status(400).json({ success: false, message: "Order not found" });
+        };
+
+        const payload = {
+            userId: new ObjectId(userId),
+            orderId: new ObjectId(orderId),
+        };
+
+        const otpRecord = await OTPModel.findOne(payload).sort({ createdAt: -1 });
+        if (!otpRecord) {
+            return res.json({ success: false, message: "Invalid OTP" });
+        };
+
+        if (parseInt(otpRecord.otp) !== parseInt(otp)) {
+            return res.status(400).json({ success: false, message: "The OTP you entered is incorrect.Please verify and try again." });
+        };
+
+        if (otpRecord.expireAt.getTime() < new Date().getTime()) {
+            return res.status(400).json({ success: false, message: "Your OTP has been expired." });
+        };
+
+        await OTPModel.deleteMany(payload);
+
+        await orderModel.findByIdAndUpdate(orderId, {
+            status: "confirmed",
+            paymentMethod: "cod",
+            paymentStatus: "pending",
+        });
+
+        return res.status(200).json({ success: true, message: "OTP verified! COD Order Confirmed" });
+    } catch (error) {
+        console.error("Verify Order OTP Error-------->", error);
+        return res.status(400).json({ success: false, message: "OTP verification failed" });
+    };
+};
+
+const updateCashOnDeliveryOrderStatus = async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        const userId = req.user.id;
+
+        if (!orderId) {
+            return res.status(400).json({ success: false, message: "Invalid Order" });
+        };
+
+        const order = await orderModel.findOne({ _id: new ObjectId(orderId), userId: new ObjectId(userId) });
+        if (!order) {
+            return res.status(400).json({ success: false, message: "Order not found" });
+        };
+
+        const updateOrder = await orderModel.findByIdAndUpdate(orderId, {
+            status: "confirmed",
+            paymentMethod: "cod",
+            paymentStatus: "pending",
+        });
+
+        if (!updateOrder) {
+            return res.status(400).json({ success: false, message: "Your Order has not Confirmed, please try again later." });
+        };
+
+        return res.status(200).json({ success: true, message: "Your Order has been Confirmed" });
+    } catch (error) {
+        console.error("update Cash On Delivery Order Status Error-------->", error);
+        return res.status(400).json({ success: false, message: "Something went Wrong, please try again later." });
     };
 };
 
@@ -309,7 +443,7 @@ const getOrderStats = async (req, res) => {
         // Get recent orders
         const recentOrders = await orderModel
             .find({})
-            .populate("userId", "name email")
+            .populate("userId")
             .sort({ date: -1 })
             .limit(10);
 
@@ -382,4 +516,7 @@ export {
     updateOrderStatus,
     getOrderStats,
     deleteOrder,
+    sendOrderOTP,
+    verifyOrderOTP,
+    updateCashOnDeliveryOrderStatus,
 };

@@ -32,7 +32,7 @@ const getDashboardStats = async (req, res) => {
         // Get recent orders (last 5)
         const recentOrders = await orderModel
             .find({})
-            .populate("userId", "name email")
+            .populate("userId")
             .sort({ date: -1 })
             .limit(5);
 

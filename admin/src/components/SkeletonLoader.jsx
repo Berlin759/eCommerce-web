@@ -14,6 +14,19 @@ const SkeletonLoader = ({ type = "card", count = 1 }) => {
         </div>
     );
 
+    const SettingSkeleton = () => (
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 animate-pulse">
+            <div className="flex items-center justify-between">
+                <div className="flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                    <div className="h-8 bg-gray-200 rounded w-16 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-12"></div>
+                </div>
+                <div className="w-16 h-16 bg-gray-200 rounded-2xl"></div>
+            </div>
+        </div>
+    );
+
     const TableRowSkeleton = () => (
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl animate-pulse">
             <div className="flex-1">
@@ -382,6 +395,10 @@ const SkeletonLoader = ({ type = "card", count = 1 }) => {
         return <OrdersSkeleton />;
     }
 
+    if (type === "settings") {
+        return <SettingSkeleton />;
+    }
+
     if (type === "user") {
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -430,6 +447,7 @@ SkeletonLoader.propTypes = {
         "user",
         "contacts",
         "orders",
+        "settings",
     ]),
     count: PropTypes.number,
 };

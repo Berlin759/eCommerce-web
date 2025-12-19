@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
     resetCart,
@@ -28,6 +28,7 @@ import api from "../api/axiosInstance";
 
 const Cart = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const products = useSelector((state) => state.orebiReducer.products);
     const userInfo = useSelector((state) => state.orebiReducer.userInfo);
     const orderCount = useSelector((state) => state.orebiReducer.orderCount);
@@ -126,7 +127,8 @@ const Cart = () => {
 
     const handlePlaceOrder = async () => {
         if (!userInfo) {
-            toast.error("Please login to place an order");
+            navigate("/signin");
+            // toast.error("Please login to place an order");
             return;
         }
 
@@ -689,7 +691,7 @@ const Cart = () => {
 
                                 <button
                                     onClick={handlePlaceOrder}
-                                    disabled={!userInfo || !selectedAddress || isPlacingOrder}
+                                    disabled={isPlacingOrder}
                                     className="w-full bg-gray-900 text-white py-4 px-6 rounded-md hover:bg-gray-800 transition-colors font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {!userInfo ? (

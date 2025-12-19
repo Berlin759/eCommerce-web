@@ -39,7 +39,7 @@ export const createContact = async (req, res) => {
 
         await contact.save();
 
-        await contact.populate("userId", "name email");
+        await contact.populate("userId");
 
         return res.status(200).json({
             success: true,
@@ -90,7 +90,7 @@ export const getAllContacts = async (req, res) => {
         };
 
         const contacts = await Contact.find(filter)
-            .populate("userId", "name email")
+            .populate("userId")
             .sort({ _id: -1 })
             .limit(limit * 1)
             .skip((page - 1) * limit);
@@ -141,7 +141,7 @@ export const getContactById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const contact = await Contact.findById(id).populate("userId", "name email");
+        const contact = await Contact.findById(id).populate("userId");
 
         if (!contact) {
             return res.status(404).json({
@@ -186,7 +186,7 @@ export const updateContactStatus = async (req, res) => {
             contactUsId,
             updatePayload,
             { new: true }
-        ).populate("userId", "name email");
+        ).populate("userId");
 
         if (!contact) {
             return res.status(404).json({
@@ -246,7 +246,7 @@ export const getUserContacts = async (req, res) => {
         //     .skip((page - 1) * limit);
 
         const contacts = await Contact.find({ userId })
-            .populate("userId", "name email")
+            .populate("userId")
             .sort({ _id: -1 });
 
         const total = await Contact.countDocuments({ userId });
