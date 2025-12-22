@@ -10,7 +10,7 @@ const Analytics = () => {
     const stats = [
         {
             title: "Total Revenue",
-            value: "$45,230",
+            value: "₹45,230",
             change: "+12.5%",
             trend: "up",
             icon: <FaDollarSign />,

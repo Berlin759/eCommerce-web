@@ -97,8 +97,8 @@ const ProductsSideNav = ({ onFilterChange, filters, onClearFilters }) => {
                         >
                             <input
                                 type="checkbox"
-                                checked={filters?.category === category}
-                                onChange={() => handleCategoryChange(category)}
+                                checked={filters?.category === category?.toLowerCase()}
+                                onChange={() => handleCategoryChange(category?.toLowerCase())}
                                 className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900 focus:ring-2"
                             />
                             <span className="ml-3 text-gray-700 group-hover:text-gray-900 transition-colors capitalize">
@@ -110,7 +110,7 @@ const ProductsSideNav = ({ onFilterChange, filters, onClearFilters }) => {
             </div>
 
             {/* Brands */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+            {/* <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Brands</h3>
                 <div className="space-y-3 max-h-60 overflow-y-auto">
                     {brands.map((brand) => (
@@ -130,7 +130,7 @@ const ProductsSideNav = ({ onFilterChange, filters, onClearFilters }) => {
                         </label>
                     ))}
                 </div>
-            </div>
+            </div> */}
 
             {/* Price Range */}
             <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
@@ -181,10 +181,10 @@ const ProductsSideNav = ({ onFilterChange, filters, onClearFilters }) => {
                     <h4 className="text-sm font-medium text-gray-700">Quick Filters:</h4>
                     <div className="flex flex-wrap gap-2">
                         {[
-                            { label: "Under $50", min: 0, max: 50 },
-                            { label: "$50-$100", min: 50, max: 100 },
-                            { label: "$100-$200", min: 100, max: 200 },
-                            { label: "Over $200", min: 200, max: 1000 },
+                            { label: "Under ₹50", min: 0, max: 50 },
+                            { label: "₹50-₹100", min: 50, max: 100 },
+                            { label: "₹100-₹200", min: 100, max: 200 },
+                            { label: "Over ₹200", min: 200, max: 1000 },
                         ].map((range) => (
                             <button
                                 key={range.label}

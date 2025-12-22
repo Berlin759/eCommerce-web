@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Container from "../components/Container";
-import { MdStar, MdFavoriteBorder, MdShare } from "react-icons/md";
+import { MdStar, MdFavoriteBorder, MdShare, MdTrendingUp } from "react-icons/md";
 import { motion } from "framer-motion";
 import { getData } from "../helpers/index";
 import { serverUrl } from "../../config";
+import PriceFormat from "../components/PriceFormat";
 import AddToCartButton from "../components/AddToCartButton";
 
 const SingleProduct = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const [productInfo, setProductInfo] = useState([]);
+    const [productInfo, setProductInfo] = useState(null);
     const [selectedImage, setSelectedImage] = useState(0);
     const [activeTab, setActiveTab] = useState("description");
     const [quantity, setQuantity] = useState(1);
@@ -19,8 +20,10 @@ const SingleProduct = () => {
     const [loadingRelated, setLoadingRelated] = useState(false);
 
     useEffect(() => {
-        setProductInfo(location.state.item);
-    }, [location, productInfo]);
+        if (location.state?.item) {
+            setProductInfo(location.state.item);
+        };
+    }, [location.state]);
 
     // Fetch related products based on category
     useEffect(() => {
@@ -70,6 +73,29 @@ const SingleProduct = () => {
         }
     };
 
+    if (!productInfo) return null;
+
+    if (!productInfo) {
+        return (
+            <Container>
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="text-center">
+                        <FaTimes className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                            No Product details
+                        </h2>
+                        <button
+                            onClick={() => navigate(`/`,)}
+                            className="bg-gray-900 text-white px-6 py-2 rounded-md hover:bg-gray-800 transition-colors"
+                        >
+                            Back To Home
+                        </button>
+                    </div>
+                </div>
+            </Container>
+        );
+    }
+
     return (
         <div className="bg-white min-h-screen">
             <Container className="py-8">
@@ -102,8 +128,8 @@ const SingleProduct = () => {
                                 src={productImages[selectedImage] || "/placeholder-image.jpg"}
                                 alt={productInfo?.name}
                                 className={`w-full h-full object-cover transition-all duration-500 ${isImageZoomed
-                                        ? "scale-150 cursor-zoom-out"
-                                        : "hover:scale-105 group-hover:scale-105"
+                                    ? "scale-150 cursor-zoom-out"
+                                    : "hover:scale-105 group-hover:scale-105"
                                     }`}
                                 onError={(e) => {
                                     e.target.src = "/placeholder-image.jpg";
@@ -125,8 +151,8 @@ const SingleProduct = () => {
                                     key={index}
                                     onClick={() => setSelectedImage(index)}
                                     className={`aspect-square overflow-hidden bg-gray-50 rounded-lg border-2 transition-all duration-200 ${selectedImage === index
-                                            ? "border-black"
-                                            : "border-transparent hover:border-gray-300"
+                                        ? "border-black"
+                                        : "border-transparent hover:border-gray-300"
                                         }`}
                                 >
                                     <img
@@ -150,23 +176,28 @@ const SingleProduct = () => {
                         className="space-y-6"
                     >
                         {/* Product Title */}
-                        <h1 className="text-3xl md:text-4xl font-light text-gray-900 leading-tight">
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
                             {productInfo?.name}
                         </h1>
 
                         {/* Price */}
                         <div className="flex items-center gap-4">
-                            {productInfo?.oldPrice && (
+                            <span className="text-3xl font-bold text-gray-900">
+                                <PriceFormat amount={productInfo?.price} />
+                            </span>
+                            {productInfo?.mrp && (
                                 <span className="text-2xl text-gray-400 line-through">
-                                    ${productInfo.oldPrice}
+                                    <PriceFormat amount={productInfo?.mrp} />
                                 </span>
                             )}
-                            <span className="text-3xl font-light text-gray-900">
-                                ${productInfo?.price}
-                            </span>
-                            {productInfo?.oldPrice && (
+                            {/* {productInfo?.mrp && (
                                 <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium">
-                                    Save ${(productInfo.oldPrice - productInfo.price).toFixed(2)}
+                                    Save <PriceFormat amount={(productInfo?.mrp - productInfo?.price)} />
+                                </span>
+                            )} */}
+                            {productInfo?.discountedPercentage > 0 && (
+                                <span className="text-green-700 text-2xl font-bold bg-green-100 px-3 py-1 rounded-full">
+                                    {productInfo?.discountedPercentage}% off
                                 </span>
                             )}
                         </div>
@@ -178,8 +209,8 @@ const SingleProduct = () => {
                                     <MdStar
                                         key={index}
                                         className={`w-5 h-5 ${index < Math.floor(productInfo?.ratings || 0)
-                                                ? "text-yellow-400"
-                                                : "text-gray-300"
+                                            ? "text-yellow-400"
+                                            : "text-gray-300"
                                             }`}
                                     />
                                 ))}
@@ -194,6 +225,17 @@ const SingleProduct = () => {
                         <p className="text-gray-600 leading-relaxed text-lg">
                             {productInfo?.description}
                         </p>
+
+                        <p className="flex items-center gap-2 text-green-700 text-sm">
+                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-100">
+                                <MdTrendingUp className="text-green-600 text-lg" />
+                            </span>
+                            <span>
+                                <span className="font-semibold">2000+ People</span> ordered this in the last{" "}
+                                <span className="font-semibold">7 days</span>
+                            </span>
+                        </p>
+
 
                         {/* Quantity & Add to Cart */}
                         <div className="space-y-4">
@@ -220,16 +262,16 @@ const SingleProduct = () => {
                                 </div>
                             </div> */}
 
-                            <button className="w-full py-4 px-8">
+                            <div className="w-full py-4 px-8">
                                 <AddToCartButton item={productInfo} className={"border border-gray-300 rounded-md"} />
-                            </button>
+                            </div>
                             {/* <button className="w-full bg-black text-white py-4 px-8 rounded-md hover:bg-gray-800 transition-all duration-300 font-medium uppercase tracking-wider transform hover:scale-[1.02] active:scale-[0.98]">
                                 Add to Cart
                             </button> */}
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
+                        {/* <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
                             <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
                                 <MdFavoriteBorder className="w-5 h-5" />
                                 Add to Wishlist
@@ -238,7 +280,7 @@ const SingleProduct = () => {
                                 <MdShare className="w-5 h-5" />
                                 Share
                             </button>
-                        </div>
+                        </div> */}
 
                         {/* Product Meta */}
                         <div className="space-y-2 pt-4 border-t border-gray-200 text-sm">
@@ -278,8 +320,8 @@ const SingleProduct = () => {
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`pb-4 text-sm font-medium uppercase tracking-wider transition-colors relative ${activeTab === tab
-                                        ? "text-black border-b-2 border-black"
-                                        : "text-gray-500 hover:text-gray-700"
+                                    ? "text-black border-b-2 border-black"
+                                    : "text-gray-500 hover:text-gray-700"
                                     }`}
                             >
                                 {tab === "reviews"
@@ -336,8 +378,8 @@ const SingleProduct = () => {
                                                                         <MdStar
                                                                             key={starIndex}
                                                                             className={`w-4 h-4 ${starIndex < review.rating
-                                                                                    ? "text-yellow-400"
-                                                                                    : "text-gray-300"
+                                                                                ? "text-yellow-400"
+                                                                                : "text-gray-300"
                                                                                 }`}
                                                                         />
                                                                     )
@@ -420,8 +462,8 @@ const SingleProduct = () => {
                                                 <MdStar
                                                     key={starIndex}
                                                     className={`w-4 h-4 ${starIndex < Math.floor(product.ratings || 4)
-                                                            ? "text-yellow-400"
-                                                            : "text-gray-300"
+                                                        ? "text-yellow-400"
+                                                        : "text-gray-300"
                                                         }`}
                                                 />
                                             ))}
@@ -433,15 +475,11 @@ const SingleProduct = () => {
                                     <div className="flex items-center gap-2 mb-3">
                                         {product.discountedPercentage > 0 && (
                                             <span className="text-sm text-gray-400 line-through">
-                                                $
-                                                {(
-                                                    product.price /
-                                                    (1 - product.discountedPercentage / 100)
-                                                ).toFixed(2)}
+                                                <PriceFormat amount={(product.price / (1 - product.discountedPercentage / 100))} />
                                             </span>
                                         )}
                                         <span className="text-lg font-light text-gray-900">
-                                            ${product.price}
+                                            <PriceFormat amount={product?.price} />
                                         </span>
                                         {product.discountedPercentage > 0 && (
                                             <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
@@ -450,7 +488,7 @@ const SingleProduct = () => {
                                         )}
                                     </div>
                                     <button className="w-full mt-3 py-2 border border-gray-300 text-gray-700">
-                                        <AddToCartButton item={productInfo} />
+                                        <AddToCartButton item={product} />
                                     </button>
                                     {/* <button
                                         className="w-full mt-3 py-2 border border-gray-300 text-gray-700 hover:border-black hover:text-black hover:bg-black hover:text-white transition-all duration-300 text-sm font-medium uppercase tracking-wider transform hover:scale-[1.02]"

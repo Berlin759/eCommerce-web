@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import { deleteCloudinaryImage } from "../config/cloudinary.js";
+import { calculateDiscountedPercentage } from "../config/general.js";
 import productModel from "../models/productModel.js";
 import fs from "fs";
 
@@ -76,16 +77,16 @@ const addProduct = async (req, res) => {
             parsedTags = JSON.parse(tags);
         } catch (err) {
             parsedTags = tags ? tags.split(",").map((tag) => tag.trim()) : [];
-        }
+        };
+
+        const discountPercentage = calculateDiscountedPercentage(Number(mrp), Number(price));
 
         const productData = {
             _type: _type ? _type : "",
             name,
             mrp: Number(mrp),
             price: Number(price),
-            discountedPercentage: discountedPercentage
-                ? Number(discountedPercentage)
-                : 10,
+            discountedPercentage: discountPercentage ? Number(discountPercentage) : 0,
             stock: stock ? Number(stock) : 0,
             soldQuantity: 0,
             category,
@@ -446,16 +447,16 @@ const updateProduct = async (req, res) => {
             parsedTags = JSON.parse(tags);
         } catch (err) {
             parsedTags = tags ? tags.split(",").map((tag) => tag.trim()) : [];
-        }
+        };
+
+        const discountPercentage = calculateDiscountedPercentage(Number(mrp), Number(price));
 
         const updateData = {
             _type: _type || "",
             name,
             mrp: Number(mrp),
             price: Number(price),
-            discountedPercentage: discountedPercentage
-                ? Number(discountedPercentage)
-                : 10,
+            discountedPercentage: discountPercentage ? Number(discountPercentage) : 0,
             stock: stock ? Number(stock) : 0,
             category,
             // brand: brand || "",

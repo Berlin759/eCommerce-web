@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import Container from "./Container";
 import { Button } from "./ui/button";
@@ -6,6 +7,7 @@ import { paymentCard } from "../assets/images";
 import SocialLinks from "./SocialLinks";
 
 const Footer = () => {
+    const categoriesList = useSelector((state) => state.orebiReducer.categoriesList);
     const [emailInfo, setEmailInfo] = useState("");
     const [subscription, setSubscription] = useState(false);
     const [errMsg, setErrMsg] = useState("");
@@ -101,46 +103,20 @@ const Footer = () => {
                             Categories
                         </h4>
                         <ul className="space-y-3">
-                            <li>
-                                <a
-                                    href="/shop?category=Electronics"
-                                    className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm"
-                                >
-                                    Electronics
-                                </a>
-                            </li>
-                            <li>
-                                <a
-                                    href="/shop?category=Fashion"
-                                    className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm"
-                                >
-                                    Fashion
-                                </a>
-                            </li>
-                            <li>
-                                <a
-                                    href="/shop?category=Home & Garden"
-                                    className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm"
-                                >
-                                    Home & Garden
-                                </a>
-                            </li>
-                            <li>
-                                <a
-                                    href="/shop?category=Sports"
-                                    className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm"
-                                >
-                                    Sports
-                                </a>
-                            </li>
-                            <li>
-                                <a
-                                    href="/shop?category=Beauty"
-                                    className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm"
-                                >
-                                    Beauty
-                                </a>
-                            </li>
+                            {categoriesList && categoriesList.length > 0 ? (
+                                categoriesList.map((cat) => (
+                                    <li key={cat._id}>
+                                        <a
+                                            href={`/shop?category=${cat.slug}`}
+                                            className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm capitalize"
+                                        >
+                                            {cat.name}
+                                        </a>
+                                    </li>
+                                ))
+                            ) : (
+                                <li className="text-gray-400 text-sm">No categories</li>
+                            )}
                         </ul>
                     </div>
 

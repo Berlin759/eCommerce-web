@@ -40,7 +40,7 @@ const PriceContainer = ({ item, className }) => {
         <div
             className={twMerge("flex items-center justify-center gap-2", className)}
         >
-            {item?.offer && item?.discountedPercentage ? (
+            {/* {item?.offer && item?.discountedPercentage ? (
                 <>
                     <PriceFormat
                         amount={regularPrice()}
@@ -54,6 +54,24 @@ const PriceContainer = ({ item, className }) => {
             ) : (
                 <PriceFormat
                     amount={discountedPrice()}
+                    className="text-sm font-medium text-black"
+                />
+            )} */}
+
+            {item?.discountedPercentage > 0 ? (
+                <>
+                    <PriceFormat
+                        amount={item?.mrp}
+                        className="text-sm text-gray-400 line-through"
+                    />
+                    <PriceFormat
+                        amount={item?.price}
+                        className="text-sm font-medium text-black"
+                    />
+                </>
+            ) : (
+                <PriceFormat
+                    amount={item?.price}
                     className="text-sm font-medium text-black"
                 />
             )}

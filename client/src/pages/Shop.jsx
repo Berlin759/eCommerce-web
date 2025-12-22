@@ -174,8 +174,8 @@ const Shop = () => {
                                 {/* Mobile Filter Content */}
                                 <div
                                     className={`overflow-hidden transition-all duration-300 ease-in-out ${mobileFiltersOpen
-                                            ? "max-h-[2000px] opacity-100"
-                                            : "max-h-0 opacity-0"
+                                        ? "max-h-[2000px] opacity-100"
+                                        : "max-h-0 opacity-0"
                                         }`}
                                 >
                                     <div className="pt-4">
@@ -255,8 +255,8 @@ const Shop = () => {
                                     <button
                                         onClick={() => setViewMode("grid")}
                                         className={`p-2 ${viewMode === "grid"
-                                                ? "bg-gray-900 text-white"
-                                                : "bg-white text-gray-600 hover:bg-gray-50"
+                                            ? "bg-gray-900 text-white"
+                                            : "bg-white text-gray-600 hover:bg-gray-50"
                                             } transition-colors`}
                                         aria-label="Grid view"
                                     >
@@ -275,8 +275,8 @@ const Shop = () => {
                                     <button
                                         onClick={() => setViewMode("list")}
                                         className={`p-2 ${viewMode === "list"
-                                                ? "bg-gray-900 text-white"
-                                                : "bg-white text-gray-600 hover:bg-gray-50"
+                                            ? "bg-gray-900 text-white"
+                                            : "bg-white text-gray-600 hover:bg-gray-50"
                                             } transition-colors`}
                                         aria-label="List view"
                                     >

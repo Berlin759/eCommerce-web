@@ -8,6 +8,7 @@ import SpecialOffers from "./components/homeProducts/SpecialOffers";
 import { jwtDecode } from "jwt-decode";
 import { useDispatch } from "react-redux";
 import {
+    addCategories,
     addUser,
     removeUser,
     setOrderCount,
@@ -19,6 +20,23 @@ import api from "./api/axiosInstance";
 function App() {
     const dispatch = useDispatch();
     const [loading, setLoading] = useState(true);
+    const [loadingCategories, setLoadingCategories] = useState(false);
+
+    const fetchCategories = async () => {
+        setLoadingCategories(true);
+
+        try {
+            const response = await api.get(`${serverUrl}/api/category`);
+
+            if (response?.data?.success) {
+                dispatch(addCategories(response.data.categories));
+            };
+        } catch (error) {
+            console.error("Error fetching categories:", error);
+        } finally {
+            setLoadingCategories(false);
+        };
+    };
 
     // Function to fetch user orders and update count
     const fetchUserOrderCount = useCallback(async (token) => {
@@ -75,7 +93,11 @@ function App() {
         setLoading(false);
     }, [dispatch, fetchUserOrderCount]);
 
-    if (loading) {
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    if (loading || loadingCategories) {
         return (
             <div className="w-full h-screen flex justify-center items-center text-xl">
                 Loading...

@@ -41,6 +41,7 @@ const List = ({ token }) => {
         name: "",
         description: "",
         // brand: "",
+        mrp: "",
         price: "",
         discountedPercentage: 10,
         stock: "",
@@ -120,6 +121,7 @@ const List = ({ token }) => {
                 [name]: value === "true",
             });
         } else if (
+            name === "mrp" ||
             name === "price" ||
             name === "discountedPercentage" ||
             name === "stock"
@@ -163,6 +165,7 @@ const List = ({ token }) => {
             name: product.name || "",
             description: product.description || "",
             // brand: product.brand || "",
+            mrp: product.mrp || "",
             price: product.price || "",
             discountedPercentage: product.discountedPercentage || 10,
             stock: product.stock || 0,
@@ -190,6 +193,7 @@ const List = ({ token }) => {
             name: "",
             description: "",
             // brand: "",
+            mrp: "",
             price: "",
             discountedPercentage: 10,
             stock: "",
@@ -226,6 +230,7 @@ const List = ({ token }) => {
         if (
             !formData.name ||
             !formData.description ||
+            !formData.mrp ||
             !formData.price ||
             !formData.category
         ) {
@@ -242,6 +247,7 @@ const List = ({ token }) => {
             data.append("name", formData.name);
             data.append("description", formData.description);
             // data.append("brand", formData.brand);
+            data.append("mrp", formData.mrp);
             data.append("price", formData.price);
             data.append("discountedPercentage", formData.discountedPercentage);
             data.append("stock", formData.stock);
@@ -386,7 +392,10 @@ const List = ({ token }) => {
                                                 Category
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Price
+                                                MRP
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Discount Price
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Stock
@@ -407,6 +416,9 @@ const List = ({ token }) => {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="h-4 bg-gray-200 rounded w-24"></div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="h-4 bg-gray-200 rounded w-20"></div>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="h-4 bg-gray-200 rounded w-20"></div>
@@ -488,7 +500,10 @@ const List = ({ token }) => {
                                                 Category
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Price
+                                                MRP
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Discount Price
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Stock
@@ -525,7 +540,12 @@ const List = ({ token }) => {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="text-sm font-medium text-gray-900">
-                                                        <PriceFormat amount={product.price} />
+                                                        <PriceFormat amount={product.mrp || 0} />
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-sm font-medium text-gray-900">
+                                                        <PriceFormat amount={product.price || 0} />
                                                     </div>
                                                     {product.discountedPercentage > 0 && (
                                                         <div className="text-xs text-green-600">
@@ -601,7 +621,12 @@ const List = ({ token }) => {
                                             <div className="flex items-center justify-between mt-2">
                                                 <div>
                                                     <div className="font-medium text-gray-900">
-                                                        <PriceFormat amount={product.price} />
+                                                        <PriceFormat amount={product.mrp || 0} />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="font-medium text-gray-900">
+                                                        <PriceFormat amount={product.price || 0} />
                                                     </div>
                                                     {product.discountedPercentage > 0 && (
                                                         <div className="text-xs text-green-600">
@@ -802,11 +827,25 @@ const List = ({ token }) => {
                                 {/* Pricing & Stock */}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div className="flex flex-col">
-                                        <Label htmlFor="price">Price *</Label>
+                                        <Label htmlFor="mrp">MRP *</Label>
                                         <Input
                                             type="number"
                                             step="0.01"
                                             min="0"
+                                            name="mrp"
+                                            value={formData.mrp}
+                                            onChange={handleInputChange}
+                                            className="mt-1"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="flex flex-col">
+                                        <Label htmlFor="price">Discount Price</Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            max="100"
                                             name="price"
                                             value={formData.price}
                                             onChange={handleInputChange}
@@ -816,20 +855,7 @@ const List = ({ token }) => {
                                     </div>
 
                                     <div className="flex flex-col">
-                                        <Label htmlFor="discountedPercentage">Discount %</Label>
-                                        <Input
-                                            type="number"
-                                            min="0"
-                                            max="100"
-                                            name="discountedPercentage"
-                                            value={formData.discountedPercentage}
-                                            onChange={handleInputChange}
-                                            className="mt-1"
-                                        />
-                                    </div>
-
-                                    <div className="flex flex-col">
-                                        <Label htmlFor="stock">Stock *</Label>
+                                        <Label htmlFor="stock">Stock Quantity *</Label>
                                         <Input
                                             type="number"
                                             min="0"

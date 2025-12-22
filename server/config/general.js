@@ -340,3 +340,19 @@ export const sendOtpOnWhatsApp = async (mobile, otp) => {
         };
     };
 };
+
+export const calculateDiscountedPercentage = (firstPrice, secondPrice) => {
+    if (firstPrice <= 0) return 0;
+
+    const discountPercentage = Math.round(((firstPrice - secondPrice) / firstPrice) * 100);
+
+    return discountPercentage;
+};
+
+export const createSlug = (text) => {
+    return text
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s]/g, "")
+        .replace(/\s+/g, "-");
+};

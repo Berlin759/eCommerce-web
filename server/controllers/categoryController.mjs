@@ -1,5 +1,6 @@
 import categoryModel from "../models/categoryModel.js";
 import { cloudinary, deleteCloudinaryImage } from "../config/cloudinary.js";
+import { createSlug } from "../config/general.js";
 import fs from "fs";
 
 // Helper function to clean up temporary files
@@ -64,21 +65,22 @@ const createCategory = async (req, res) => {
         // };
 
         const newCategory = new categoryModel({
-            name,
+            name: name,
+            slug: createSlug(name),
             // image: imageUrl,
             // description: description || "",
         });
 
         await newCategory.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Category created successfully",
             category: newCategory,
         });
     } catch (error) {
         console.error("Create category error:", error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Server error",
         });
@@ -92,13 +94,13 @@ const getCategories = async (req, res) => {
             .find({ isActive: true })
             .sort({ createdAt: -1 });
 
-        res.json({
+        return res.status(200).json({
             success: true,
             categories,
         });
     } catch (error) {
         console.error("Get categories error:", error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Server error",
         });
@@ -118,13 +120,13 @@ const getCategory = async (req, res) => {
             });
         }
 
-        res.json({
+        return res.status(200).json({
             success: true,
             category,
         });
     } catch (error) {
         console.error("Get category error:", error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Server error",
         });
@@ -196,10 +198,14 @@ const updateCategory = async (req, res) => {
         //     }
         // }
 
+        const categoryName = name || category.name;
+        const slugName = createSlug(categoryName);
+
         const updatedCategory = await categoryModel.findByIdAndUpdate(
             id,
             {
                 name: name || category.name,
+                slug: slugName,
                 // image: imageUrl,
                 // description:
                 //     description !== undefined ? description : category.description,
@@ -208,14 +214,14 @@ const updateCategory = async (req, res) => {
             { new: true }
         );
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Category updated successfully",
             category: updatedCategory,
         });
     } catch (error) {
         console.error("Update category error:", error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Server error",
         });
@@ -237,13 +243,13 @@ const deleteCategory = async (req, res) => {
 
         await categoryModel.findByIdAndUpdate(id, { isActive: false });
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Category deleted successfully",
         });
     } catch (error) {
         console.error("Delete category error:", error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Server error",
         });

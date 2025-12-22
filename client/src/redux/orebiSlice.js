@@ -4,6 +4,7 @@ const initialState = {
     userInfo: null,
     products: [],
     orderCount: 0,
+    categoriesList: [],
 };
 
 export const orebiSlice = createSlice({
@@ -50,6 +51,9 @@ export const orebiSlice = createSlice({
         resetCart: (state) => {
             state.products = [];
         },
+        addCategories: (state, action) => {
+            state.categoriesList = action.payload;
+        },
         addUser: (state, action) => {
             state.userInfo = action.payload;
         },
@@ -71,6 +75,7 @@ export const {
     decreaseQuantity,
     deleteItem,
     resetCart,
+    addCategories,
     addUser,
     removeUser,
     setOrderCount,

@@ -93,15 +93,15 @@ const Invoice = () => {
                         <div className="text-left text-sm text-gray-600 space-y-2">
                             <div className="flex justify-between p-2 bg-white rounded border">
                                 <span>Order #12345678</span>
-                                <span className="text-green-600 font-semibold">$299.99</span>
+                                <span className="text-green-600 font-semibold">₹299.99</span>
                             </div>
                             <div className="flex justify-between p-2 bg-white rounded border">
                                 <span>Order #87654321</span>
-                                <span className="text-green-600 font-semibold">$459.50</span>
+                                <span className="text-green-600 font-semibold">₹459.50</span>
                             </div>
                             <div className="flex justify-between p-2 bg-white rounded border">
                                 <span>Order #45678912</span>
-                                <span className="text-green-600 font-semibold">$129.75</span>
+                                <span className="text-green-600 font-semibold">₹129.75</span>
                             </div>
                             <div className="text-center text-gray-400 py-4">
                                 + Professional invoice generation, PDF exports, and more...
