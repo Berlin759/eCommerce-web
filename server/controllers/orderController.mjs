@@ -1,7 +1,8 @@
 import { ObjectId } from "mongodb";
 import moment from "moment";
-import { generateOtp, sendOtpOnWhatsApp } from "../config/general.js";
+import { generateOtp, sendOtpOnWhatsApp, generateOrderId } from "../config/general.js";
 import Constants from "../constants/index.js";
+import { createShipment, requestPickup } from "./delhiveryController.js";
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import OTPModel from "../models/otpModel.js";
@@ -106,9 +107,12 @@ const createOrder = async (req, res) => {
             return res.status(400).json({ success: false, message: "All items must have a valid product ID" });
         };
 
+        const orderId = await generateOrderId();
+
         // Create new order with properly mapped fields
         const newOrder = new orderModel({
             userId: user._id,
+            orderId: orderId,
             items: items.map((item) => ({
                 productId: item._id || item.productId,
                 name: item.name || item.title,
@@ -359,7 +363,34 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
             return res.status(400).json({ success: false, message: "Order not found" });
         };
 
+        // Create shipment
+        // let payload = {
+        //     customerName: order.address.firstName + order.address.lastName,
+        //     address: order.address.street,
+        //     pincode: order.address.zipcode,
+        //     city: order.address.city,
+        //     state: order.address.state,
+        //     country: order.address.country,
+        //     phone: order.address.phone,
+        //     orderId: order.orderId,
+        //     paymentMethod: order.paymentMethod,
+        //     items: order.items,
+        // };
+
+        // const shipRes = await createShipment(payload);
+        // const waybill = shipRes.packages[0].waybill;
+
+        // // Request pickup
+        // await requestPickup(waybill);
+
+        // const shipping = {
+        //     courier: "Delhivery",
+        //     waybill,
+        //     status: "Pickup Requested"
+        // };
+
         const updateOrder = await orderModel.findByIdAndUpdate(orderId, {
+            // shipping: shipping,
             status: "confirmed",
             paymentMethod: "cod",
             paymentStatus: "pending",

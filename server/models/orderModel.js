@@ -6,6 +6,10 @@ const orderSchema = new mongoose.Schema({
         ref: "user",
         required: true,
     },
+    orderId: {
+        type: String,
+        default: "",
+    },
     razorpayPaymentId: {
         type: String,
         default: "",
@@ -99,6 +103,20 @@ const orderSchema = new mongoose.Schema({
         phone: {
             type: String,
             required: true,
+        },
+    },
+    shipping: {
+        courier: {
+            type: String,
+        },
+        waybill: {
+            type: String,
+        },
+        status: {
+            type: String,
+        },
+        trackingHistory: {
+            type: Array,
         },
     },
     status: {

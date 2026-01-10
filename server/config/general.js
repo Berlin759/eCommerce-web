@@ -356,3 +356,8 @@ export const createSlug = (text) => {
         .replace(/[^a-z0-9\s]/g, "")
         .replace(/\s+/g, "-");
 };
+
+export const generateOrderId = () => {
+    const random = crypto.randomBytes(4).toString("hex").toUpperCase();
+    return `ORDER-${Date.now()}-${random}`;
+}

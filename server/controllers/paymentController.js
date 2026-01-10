@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import crypto from "crypto";
 import mongoose from "mongoose";
 import { razorpayInstance } from "../config/razorpay.js";
+import { createShipment, requestPickup } from "./delhiveryController.js";
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 
@@ -432,13 +433,47 @@ export const handleRazorpayWebhook = async (req, res) => {
         if (event.event === "payment_link.paid") {
             const p = event.payload.payment.entity;
 
+            // const order = await orderModel.findOne({ razorpayPaymentLinkId: event.payload.payment_link.entity.id });
+            // if (!order) {
+            //     return res.status(400).json({ success: false, message: "Order not found" });
+            // };
+
+            // // Create shipment
+            // let payload = {
+            //     customerName: order.address.firstName + order.address.lastName,
+            //     address: order.address.street,
+            //     pincode: order.address.zipcode,
+            //     city: order.address.city,
+            //     state: order.address.state,
+            //     country: order.address.country,
+            //     phone: order.address.phone,
+            //     orderId: order.orderId,
+            //     paymentMethod: order.paymentMethod,
+            //     items: order.items,
+            // };
+
+            // const shipRes = await createShipment(payload);
+            // const waybill = shipRes.packages[0].waybill;
+
+            // // Request pickup
+            // await requestPickup(waybill);
+
+            // const shipping = {
+            //     courier: "Delhivery",
+            //     waybill,
+            //     status: "Pickup Requested"
+            // };
+
             await orderModel.findOneAndUpdate(
                 { razorpayPaymentLinkId: event.payload.payment_link.entity.id },
-                { paymentStatus: "paid", status: "confirmed", }
+                {
+                    // shipping: shipping,
+                    status: "confirmed",
+                    paymentMethod: "online",
+                    paymentStatus: "paid",
+                },
             );
-        }
-
-        if (event.event === "payment_link.failed") {
+        } else if (event.event === "payment_link.failed") {
             await orderModel.findOneAndUpdate(
                 { razorpayPaymentLinkId: event.payload.payment_link.entity.id },
                 { paymentStatus: "failed", status: "cancelled" }
