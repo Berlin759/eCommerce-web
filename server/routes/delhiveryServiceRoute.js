@@ -2,7 +2,7 @@ import express from "express";
 import {
     handleOrderTrack,
     handleDelhiveryWebhook,
-} from "../controllers/delhiveryController";
+} from "../controllers/delhiveryController.js";
 import userAuth from "../middleware/userAuth.js";
 
 const router = express.Router();
