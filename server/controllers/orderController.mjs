@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import moment from "moment";
-import { generateOtp, sendOtpOnWhatsApp, generateOrderId } from "../config/general.js";
+import { generateOtp, sendOtpOnWhatsApp, generateOrderId, getTomorrowInTimezone } from "../config/general.js";
 import Constants from "../constants/index.js";
 import { createShipment, requestPickup } from "./delhiveryController.js";
 import orderModel from "../models/orderModel.js";
@@ -364,33 +364,49 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
         };
 
         // Create shipment
-        // let payload = {
-        //     customerName: order.address.firstName + order.address.lastName,
-        //     address: order.address.street,
-        //     pincode: order.address.zipcode,
-        //     city: order.address.city,
-        //     state: order.address.state,
-        //     country: order.address.country,
-        //     phone: order.address.phone,
-        //     orderId: order.orderId,
-        //     paymentMethod: order.paymentMethod,
-        //     items: order.items,
-        // };
+        let payload = {
+            customerName: order.address.firstName + order.address.lastName,
+            address: order.address.street,
+            pincode: order.address.zipcode,
+            city: order.address.city,
+            state: order.address.state,
+            country: order.address.country,
+            phone: order.address.phone,
+            orderId: order.orderId,
+            paymentMethod: order.paymentMethod,
+            items: order.items,
+        };
 
-        // const shipRes = await createShipment(payload);
-        // const waybill = shipRes.packages[0].waybill;
+        const shipRes = await createShipment(payload);
+        const waybill = shipRes.packages[0].waybill;
 
-        // // Request pickup
-        // await requestPickup(waybill);
+        // Request pickup
+        // const today = new Date();
+        // today.setDate(today.getDate() + 1);
 
-        // const shipping = {
-        //     courier: "Delhivery",
-        //     waybill,
-        //     status: "Pickup Requested"
-        // };
+        // const yyyy = today.getFullYear();
+        // const mm = String(today.getMonth() + 1).padStart(2, '0');
+        // const dd = String(today.getDate()).padStart(2, '0');
+        // const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+        const tomorrowIST = await getTomorrowInTimezone(process.env.CURRENT_TIME_ZONE);
+
+        const requestBody = {
+            pickup_time: '11:00:00',
+            pickup_date: tomorrowIST,
+            pickup_location: process.env.SELLER_ADDRESS,
+            expected_package_count: order.items.length,
+        };
+        await requestPickup(requestBody);
+
+        const shipping = {
+            courier: "Delhivery",
+            waybill,
+            status: "Pickup Requested"
+        };
 
         const updateOrder = await orderModel.findByIdAndUpdate(orderId, {
-            // shipping: shipping,
+            shipping: shipping,
             status: "confirmed",
             paymentMethod: "cod",
             paymentStatus: "pending",

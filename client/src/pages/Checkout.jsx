@@ -31,6 +31,8 @@ const Checkout = () => {
     const [otpModal, setOtpModal] = useState(false);
     const [otp, setOtp] = useState("")
     const [otpSent, setOtpSent] = useState(false);
+    const [tracking, setTracking] = useState(null);
+    const [trackingLoading, setTrackingLoading] = useState(false);
 
     const fetchOrderDetails = useCallback(async () => {
         try {
@@ -125,10 +127,47 @@ const Checkout = () => {
         };
     };
 
+    const fetchOrderTracking = async () => {
+        try {
+            setTrackingLoading(true);
+
+            const res = await api.post(
+                `${serverUrl}/api/delhivery/order-track`,
+                { orderId }
+            );
+
+            const response = await api.post(`${serverUrl}/api/delhivery/order-track`, {
+                orderId: orderId,
+            });
+
+            const data = response.data;
+
+            if (data.success) {
+                setTracking(data.shipmentDetails);
+            };
+
+            if (data.success) {
+                setTracking(data.shipmentDetails);
+            } else {
+                console.error("Error fetching shipment:", error);
+                toast.error("Failed to load shipment details");
+            };
+        } catch (err) {
+            console.error("Error handle fetching shipment:", err);
+            toast.error("Error handle fetching shipment details");
+        } finally {
+            setTrackingLoading(false);
+        };
+    };
+
     useEffect(() => {
         if (orderId) {
             fetchOrderDetails();
-        }
+
+            if (order?.status !== "pending") {
+                // fetchOrderTracking();
+            };
+        };
     }, [orderId, fetchOrderDetails]);
 
     const handleRazorpaySuccess = (paymentIntentId) => {
@@ -347,6 +386,54 @@ const Checkout = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Order Tracking */}
+                        <div className="bg-white rounded-lg border border-gray-200 p-6">
+                            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <FaMapMarkerAlt className="w-5 h-5" />
+                                Order Tracking
+                            </h2>
+
+                            {trackingLoading && (
+                                <p className="text-gray-500">Fetching tracking updates...</p>
+                            )}
+
+                            {!tracking && !trackingLoading && (
+                                <p className="text-gray-500">Tracking will be available once shipped</p>
+                            )}
+
+                            {tracking && (
+                                <>
+                                    <p className="text-sm text-gray-600 mb-4">
+                                        <strong>AWB:</strong> {tracking.waybill}
+                                    </p>
+
+                                    <div className="relative border-l-2 border-gray-300 pl-6 space-y-6">
+                                        {tracking.history.map((step, index) => (
+                                            <div key={index} className="relative">
+                                                <span className="absolute -left-3 top-1 w-4 h-4 bg-blue-600 rounded-full"></span>
+
+                                                <div>
+                                                    <p className="font-medium text-gray-900">
+                                                        {step.status}
+                                                    </p>
+                                                    <p className="text-sm text-gray-600">
+                                                        {step.location}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {new Date(step.time).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="mt-4 text-sm font-semibold text-green-700">
+                                        Current Status: {tracking.status}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 

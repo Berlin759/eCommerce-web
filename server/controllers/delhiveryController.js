@@ -6,7 +6,8 @@ import userModel from "../models/userModel.js";
 
 const { ObjectId } = mongoose.Types;
 
-const BASE_URL = "https://track.delhivery.com/api";
+// const BASE_URL = "https://track.delhivery.com/api";
+const BASE_URL = process.env.DELHIVERY_BASE_URL;
 const TOKEN = process.env.DELHIVERY_TOKEN;
 
 export const handleOrderTrack = async (req, res) => {
@@ -33,24 +34,37 @@ export const handleOrderTrack = async (req, res) => {
         };
 
         const shipmentRes = await axios.get(
-            `${BASE_URL}/v1/packages/json/?waybill=${order.shipping.waybill}`,
+            `${BASE_URL}/api/v1/packages/json/?waybill=${order.shipping.waybill}`,
             {
                 headers: {
                     Authorization: `Token ${TOKEN}`,
+                    'Content-Type': 'application/json',
                 },
             },
         );
+        console.log("shipmentRes------------>", shipmentRes);
 
         if (!shipmentRes) {
-            return res.status(400).json({ success: false, message: "Something went Wrong, please try again later." });
+            return res.status(400).json({ success: false, message: "No tracking data" });
         };
 
-        const shipmentData = shipmentRes.data;
+        const shipment = shipmentRes.data.ShipmentData?.[0]?.Shipment;
+
+        if (!shipment) {
+            return res.json({ success: false, message: "No tracking data" });
+        };
 
         return res.status(200).json({
             success: true,
-            shipmentList: shipmentData,
-            total: shipmentData.length,
+            shipmentDetails: {
+                waybill: order.shipping.waybill,
+                status: shipment.Status.Status,
+                history: shipment.Scans.map(scan => ({
+                    status: scan.ScanDetail.Scan,
+                    location: scan.ScanDetail.ScannedLocation,
+                    time: scan.ScanDetail.ScanDateTime
+                })),
+            },
             message: "Order shipment details fetched successfully",
         });
     } catch (error) {
@@ -107,13 +121,13 @@ export const createShipment = async (order) => {
                 shipment_height: order.shipmentHeight ? order.shipmentHeight : "", //10,
                 quantity: order.items.length || 0,
                 products_desc: order.items.map(i => i.name).join(", "),
-                seller_name: "Your Company",
-                seller_add: "Warehouse Address",
-                return_add: "Warehouse Address",
-                return_pin: "560001",
-                return_city: "Bangalore",
-                return_state: "Karnataka",
-                return_country: "India"
+                seller_name: process.env.SELLER_NAME,
+                seller_add: process.env.SELLER_ADDRESS,
+                return_add: process.env.RETURN_ADDRESS,
+                return_pin: process.env.RETURN_PIN,
+                return_city: process.env.RETURN_CITY,
+                return_state: process.env.RETURN_STATE,
+                return_country: process.env.RETURN_COUNTRY,
             }],
             pickup_location: {
                 name: process.env.DELHIVERY_PICKUP_LOCATION,
@@ -121,11 +135,12 @@ export const createShipment = async (order) => {
         };
 
         const res = await axios.post(
-            `${BASE_URL}/cmu/create.json`,
+            `${BASE_URL}/api/cmu/create.json`,
             payload,
             {
                 headers: {
                     Authorization: `Token ${TOKEN}`,
+                    Accept: 'application/json',
                     "Content-Type": "application/json",
                 },
             },
@@ -138,13 +153,14 @@ export const createShipment = async (order) => {
     }
 };
 
-export const requestPickup = async (waybill) => {
+export const requestPickup = async (payload) => {
     try {
-        const res = await axios.post(`${BASE_URL}/fm/request/new/`, `wbns=${JSON.stringify([waybill])}`,
+        const res = await axios.post(`${BASE_URL}/fm/request/new/`, payload,
             {
                 headers: {
                     Authorization: `Token ${TOKEN}`,
-                    "Content-Type": "application/x-www-form-urlencoded"
+                    'Content-Type': 'application/json',
+                    // "Content-Type": "application/x-www-form-urlencoded",
                 },
             },
         );
@@ -152,24 +168,6 @@ export const requestPickup = async (waybill) => {
         return res.data;
     } catch (error) {
         console.error("requestPickup error------->", error);
-        return res.status(500).json({ success: false, message: error.message });
-    };
-};
-
-export const trackShipment = async (waybill) => {
-    try {
-        const res = await axios.get(
-            `${BASE_URL}/v1/packages/json/?waybill=${waybill}`,
-            {
-                headers: {
-                    Authorization: `Token ${TOKEN}`,
-                },
-            },
-        );
-
-        return res.data;
-    } catch (error) {
-        console.error("trackShipment error------->", error);
         return res.status(500).json({ success: false, message: error.message });
     };
 };

@@ -361,3 +361,22 @@ export const generateOrderId = () => {
     const random = crypto.randomBytes(4).toString("hex").toUpperCase();
     return `ORDER-${Date.now()}-${random}`;
 }
+
+export const getTomorrowInTimezone = (timeZone) => {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    });
+
+    const parts = formatter.formatToParts(new Date());
+    const y = Number(parts.find(p => p.type === "year").value);
+    const m = Number(parts.find(p => p.type === "month").value);
+    const d = Number(parts.find(p => p.type === "day").value);
+
+    const date = new Date(Date.UTC(y, m - 1, d));
+    date.setUTCDate(date.getUTCDate() + 1);
+
+    return date.toISOString().split("T")[0];
+};
