@@ -31,8 +31,8 @@ router.post(
 
 
 // Create Razorpay Order
-router.post("/api/payment/razorpay/create-order", userAuth, createRazorpayOrder);
-router.post("/api/payment/razorpay/verify-payment", userAuth, verifyRazorpayPayment);
+router.post(`${routeValue}razorpay/create-order`, userAuth, createRazorpayOrder);
+router.post(`${routeValue}razorpay/verify-payment`, userAuth, verifyRazorpayPayment);
 
 // Razorpay webhook (no auth required)
 router.post(
@@ -41,6 +41,6 @@ router.post(
     handleRazorpayWebhook
 );
 
-router.post("/api/payment/razorpay/create-payment-link", userAuth, createPaymentLink);
+router.post(`${routeValue}razorpay/create-payment-link`, userAuth, createPaymentLink);
 
 export default router;

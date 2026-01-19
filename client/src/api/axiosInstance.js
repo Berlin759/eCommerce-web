@@ -5,6 +5,10 @@ import { serverUrl } from "../../config"
 
 const api = axios.create({
     baseURL: serverUrl,
+    headers: {
+        "ngrok-skip-browser-warning": "true",
+    },
+    withCredentials: true,
 });
 
 // Attach token to all requests

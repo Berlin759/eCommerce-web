@@ -12,14 +12,14 @@ import { IoMdCart } from "react-icons/io";
 import { useSelector } from "react-redux";
 import { FaUserAlt } from "react-icons/fa";
 export const headerNavigation = [
-    {
-        title: "Home",
-        link: "/",
-    },
-    {
-        title: "Shop",
-        link: "/shop",
-    },
+    // {
+    //     title: "Home",
+    //     link: "/",
+    // },
+    // {
+    //     title: "Shop",
+    //     link: "/shop",
+    // },
     {
         title: "About",
         link: "/about",
@@ -43,11 +43,12 @@ export const headerNavigation = [
 ];
 
 const Header = () => {
-    const location = useLocation();
-    const { products, userInfo, orderCount } = useSelector(
-        (state) => state.orebiReducer
-    );
     let [isOpen, setIsOpen] = useState(false);
+    const location = useLocation();
+    const { products, userInfo, orderCount } = useSelector((state) => state.orebiReducer);
+    const categoriesList = useSelector((state) => state.orebiReducer.categoriesList);
+    const activeCategory = new URLSearchParams(location.search).get("category")?.toLowerCase();
+
     const toggleMenu = () => {
         setIsOpen(!isOpen);
     };
@@ -63,12 +64,68 @@ const Header = () => {
                 <SearchInput />
 
                 <div className="hidden md:inline-flex items-center gap-4 lg:gap-x-6 text-sm uppercase font-medium text-gray-700">
+                    <NavLink
+                        className={`hover:text-black duration-300 relative group overflow-hidden px-1 py-2 transition-colors ${location?.pathname === "/"
+                            ? "text-black font-semibold"
+                            : "text-gray-700"
+                            }`}
+                        to="/"
+                        state={{ data: location.pathname.split("/")[1] }}
+                    >
+                        <div className="relative flex items-center">
+                            Home
+                        </div>
+                        <span
+                            className={`absolute bottom-0 left-0 inline-block w-full h-0.5 bg-black group-hover:translate-x-0 duration-300 ease-out ${location?.pathname === "/"
+                                ? "translate-x-0"
+                                : "-translate-x-full"
+                                }`}
+                        />
+                    </NavLink>
+                    <div className="relative group">
+                        <button
+                            type="button"
+                            className="cursor-pointer px-1 py-2 uppercase text-gray-700 hover:text-black font-medium"
+                        >
+                            Category
+                        </button>
+
+                        {/* Dropdown */}
+                        <div className="absolute left-0 top-full mt-2 w-48 bg-white border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <Link
+                                to="/shop"
+                                className={`block px-4 py-2 text-sm 
+                                    ${!activeCategory
+                                        ? "bg-gray-100 text-black font-semibold"
+                                        : "text-gray-700 hover:bg-gray-100"
+                                    }
+                                `}
+                            >
+                                All Categories
+                            </Link>
+                            {categoriesList?.length > 0 && categoriesList.map((cat) => (
+                                <Link
+                                    key={cat._id}
+                                    to={`/shop?category=${cat.slug}`}
+                                    onClick={() => window.scrollTo(0, 0)}
+                                    className={`block px-4 py-2 text-sm transition-colors
+                                        ${activeCategory === cat.name.toLowerCase()
+                                            ? "bg-gray-100 text-black font-semibold"
+                                            : "text-gray-700 hover:bg-gray-100 hover:text-black"
+                                        }
+                                    `}
+                                >
+                                    {cat.name}
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
                     {headerNavigation.map((item) => (
                         <NavLink
                             key={item?.title}
                             className={`hover:text-black duration-300 relative group overflow-hidden px-1 py-2 transition-colors ${location?.pathname === item?.link
-                                    ? "text-black font-semibold"
-                                    : "text-gray-700"
+                                ? "text-black font-semibold"
+                                : "text-gray-700"
                                 }`}
                             to={item?.link}
                             state={{ data: location.pathname.split("/")[1] }}
@@ -83,8 +140,8 @@ const Header = () => {
                             </div>
                             <span
                                 className={`absolute bottom-0 left-0 inline-block w-full h-0.5 bg-black group-hover:translate-x-0 duration-300 ease-out ${location?.pathname === item?.link
-                                        ? "translate-x-0"
-                                        : "-translate-x-full"
+                                    ? "translate-x-0"
+                                    : "-translate-x-full"
                                     }`}
                             />
                         </NavLink>
@@ -152,6 +209,35 @@ const Header = () => {
                                     </button>
                                 </div>
 
+                                <div className="px-4 py-3">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                                        Categories
+                                    </p>
+
+                                    <div className="space-y-1">
+                                        {categoriesList?.length > 0 && categoriesList.map((cat) => (
+                                            <Link
+                                                key={cat._id}
+                                                to={`/shop?category=${cat.slug}`}
+                                                onClick={() => {
+                                                    setIsOpen(false);
+                                                    window.scrollTo(0, 0);
+                                                }}
+                                                className={`block px-3 py-2 text-sm transition-colors
+                                                    ${activeCategory === cat.name.toLowerCase()
+                                                        ? "bg-gray-100 text-black font-semibold"
+                                                        : "text-gray-700 hover:bg-gray-50 hover:text-black"
+                                                    }
+                                                `}
+                                            >
+                                                {cat.name}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="border-t border-gray-100 my-4" />
+
                                 <div className="space-y-1">
                                     {headerNavigation?.map((item) => (
                                         <NavLink
@@ -160,16 +246,16 @@ const Header = () => {
                                             onClick={() => setIsOpen(false)}
                                             state={{ data: location.pathname.split("/")[1] }}
                                             className={`block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-black transition-all duration-200 transform hover:translate-x-1 ${location?.pathname === item?.link
-                                                    ? "bg-gray-100 text-black font-semibold"
-                                                    : ""
+                                                ? "bg-gray-100 text-black font-semibold"
+                                                : ""
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3 justify-between">
                                                 <div className="flex items-center gap-3">
                                                     <div
                                                         className={`w-2 h-2 rounded-full transition-colors duration-200 ${location?.pathname === item?.link
-                                                                ? "bg-black"
-                                                                : "bg-gray-300"
+                                                            ? "bg-black"
+                                                            : "bg-gray-300"
                                                             }`}
                                                     />
                                                     {item?.title}

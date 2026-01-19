@@ -413,69 +413,103 @@ export const verifyRazorpayPayment = async (req, res) => {
 
 export const handleRazorpayWebhook = async (req, res) => {
     try {
-        const payload = req.rawBody;
-        console.log("Webhook payload----->", payload);
-        const signature = req.headers["x-razorpay-signature"];
+        const eventType = req.body;
+        console.log("Webhook eventType----->", eventType);
+        // const signature = req.headers["x-razorpay-signature"];
 
-        const expected = crypto
-            .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET)
-            .update(payload)
-            .digest("hex");
+        // if (!signature) {
+        //     return res.status(400).json({ success: false, message: "Signature missing" });
+        // };
 
-        if (signature !== expected) {
-            console.warn("Webhook signature mismatch");
-            return res.status(400).json({ success: false, message: "Invalid signature" });
-        };
+        // const expected = crypto
+        //     .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET)
+        //     .update(payload)
+        //     .digest("hex");
 
-        const event = JSON.parse(payload.toString());
-        console.log("Webhook event----->", event.event);
+        // if (signature !== expected) {
+        //     console.warn("Webhook signature mismatch");
+        //     return res.status(400).json({ success: false, message: "Invalid signature" });
+        // };
 
-        if (event.event === "payment_link.paid") {
-            const p = event.payload.payment.entity;
+        // const event = JSON.parse(payload.toString());
+        console.log("Webhook eventType----->", eventType.event);
 
-            // const order = await orderModel.findOne({ razorpayPaymentLinkId: event.payload.payment_link.entity.id });
-            // if (!order) {
-            //     return res.status(400).json({ success: false, message: "Order not found" });
-            // };
+        if (eventType.event === "order.paid") {
+            console.log("Webhook eventType payload----->", eventType.payload);
+            const orderEntity = eventType.payload.order.entity;
 
-            // // Create shipment
-            // let payload = {
-            //     customerName: order.address.firstName + order.address.lastName,
-            //     address: order.address.street,
-            //     pincode: order.address.zipcode,
-            //     city: order.address.city,
-            //     state: order.address.state,
-            //     country: order.address.country,
-            //     phone: order.address.phone,
-            //     orderId: order.orderId,
-            //     paymentMethod: order.paymentMethod,
-            //     items: order.items,
-            // };
+            const order = await orderModel.findOne({ razorpayOrderId: orderEntity.id });
+            console.log("Webhook order----->", order);
+            if (!order) {
+                return res.status(400).json({ success: false, message: "Order not found" });
+            };
 
-            // const shipRes = await createShipment(payload);
-            // const waybill = shipRes.packages[0].waybill;
+            if (order.paymentStatus === "paid" && order?.shipping && order?.shipping?.waybill) {
+                console.log("Duplicate webhook ignored for order:", order.orderId);
+                return res.status(200).json({ success: true });
+            };
 
-            // // Request pickup
-            // await requestPickup(waybill);
+            // Create shipment
+            let payload = {
+                customerName: order.address.firstName + order.address.lastName,
+                address: order.address.street,
+                pincode: order.address.zipcode,
+                city: order.address.city,
+                state: order.address.state,
+                country: order.address.country,
+                phone: order.address.phone,
+                orderId: order.orderId,
+                order_date: order.date,
+                paymentMethod: order.paymentMethod,
+                items: order.items,
+            };
 
-            // const shipping = {
-            //     courier: "Delhivery",
-            //     waybill,
-            //     status: "Pickup Requested"
-            // };
+            const shipRes = await createShipment(payload);
+            console.log("Webhook shipRes----->", shipRes);
+            console.log("Webhook shipRes.packages----->", shipRes.packages);
+
+            if (!shipRes.success || !shipRes.packages || shipRes.packages.length === 0) {
+                console.error("Delhivery shipment failed:", shipRes.rmk);
+
+                await orderModel.findOneAndUpdate(
+                    { razorpayOrderId: orderEntity.id },
+                    {
+                        status: "confirmed",
+                        paymentStatus: "paid",
+                        shipping: {
+                            status: "failed",
+                            error: shipRes?.rmk || "Delhivery error"
+                        },
+                    },
+                );
+
+                return res.status(200).json({ success: true });
+            };
+
+            const waybill = shipRes.packages[0].waybill;
+            console.log("Webhook waybill----->", waybill);
+
+            // Request pickup
+            await requestPickup(waybill);
+
+            const shipping = {
+                courier: "Delhivery",
+                waybill,
+                status: "Pickup Requested"
+            };
 
             await orderModel.findOneAndUpdate(
-                { razorpayPaymentLinkId: event.payload.payment_link.entity.id },
+                { razorpayOrderId: orderEntity.id },
                 {
-                    // shipping: shipping,
+                    shipping: shipping,
                     status: "confirmed",
                     paymentMethod: "online",
                     paymentStatus: "paid",
                 },
             );
-        } else if (event.event === "payment_link.failed") {
+        } else if (eventType.event === "order.failed") {
             await orderModel.findOneAndUpdate(
-                { razorpayPaymentLinkId: event.payload.payment_link.entity.id },
+                { razorpayOrderId: eventType.payload.order.entity.id },
                 { paymentStatus: "failed", status: "cancelled" }
             );
         };

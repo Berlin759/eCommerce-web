@@ -35,7 +35,12 @@ const Shop = () => {
                 ...prev,
                 category: categoryParam,
             }));
-        }
+        } else {
+            setFilters((prev) => ({
+                ...prev,
+                category: "",
+            }));
+        };
     }, [location.search]);
 
     useEffect(() => {

@@ -391,13 +391,13 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
 
         const tomorrowIST = await getTomorrowInTimezone(process.env.CURRENT_TIME_ZONE);
 
-        const requestBody = {
-            pickup_time: '11:00:00',
-            pickup_date: tomorrowIST,
-            pickup_location: process.env.SELLER_ADDRESS,
-            expected_package_count: order.items.length,
-        };
-        await requestPickup(requestBody);
+        // const requestBody = {
+        //     pickup_time: '11:00:00',
+        //     pickup_date: tomorrowIST,
+        //     pickup_location: process.env.SELLER_ADDRESS,
+        //     expected_package_count: order.items.length,
+        // };
+        await requestPickup(waybill);
 
         const shipping = {
             courier: "Delhivery",

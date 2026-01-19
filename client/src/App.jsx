@@ -111,7 +111,7 @@ function App() {
             <Container className="py-5 md:py-10">
                 <NewArrivals />
                 <BestSellers />
-                <ProductOfTheYear />
+                {/* <ProductOfTheYear /> */}
                 <SpecialOffers />
             </Container>
         </main>
