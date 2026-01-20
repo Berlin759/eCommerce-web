@@ -320,7 +320,7 @@ const Shop = () => {
                         </div>
 
                         {/* Active Filters */}
-                        {(filters.category || filters.brand || filters.search) && (
+                        {(filters.category || filters.brand || filters.search || filters.priceRange) && (
                             <div className="flex flex-wrap items-center gap-2 mb-6">
                                 <span className="text-sm text-gray-600">Active filters:</span>
                                 {filters.category && (

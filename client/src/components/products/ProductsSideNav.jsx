@@ -56,10 +56,22 @@ const ProductsSideNav = ({ onFilterChange, filters, onClearFilters }) => {
     };
 
     const handleClearAllFilter = () => {
-        setSearchTerm("");
-        setPriceRange({ min: "", max: "" });
         onClearFilters();
     };
+
+    useEffect(() => {
+        setSearchTerm(filters.search || "");
+
+        if (filters.priceRange) {
+            const [min, max] = filters.priceRange.split("-");
+            setPriceRange({
+                min: min || "",
+                max: max || "",
+            });
+        } else {
+            setPriceRange({ min: "", max: "" });
+        };
+    }, [filters]);
 
     return (
         <div className="w-full space-y-6">
