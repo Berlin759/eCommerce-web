@@ -55,6 +55,12 @@ const ProductsSideNav = ({ onFilterChange, filters, onClearFilters }) => {
         onFilterChange({ priceRange: `${min}-${max}` });
     };
 
+    const handleClearAllFilter = () => {
+        setSearchTerm("");
+        setPriceRange({ min: "", max: "" });
+        onClearFilters();
+    };
+
     return (
         <div className="w-full space-y-6">
             {/* Search */}
@@ -184,7 +190,7 @@ const ProductsSideNav = ({ onFilterChange, filters, onClearFilters }) => {
                             { label: "Under ₹50", min: 0, max: 50 },
                             { label: "₹50-₹100", min: 50, max: 100 },
                             { label: "₹100-₹200", min: 100, max: 200 },
-                            { label: "Over ₹200", min: 200, max: 1000 },
+                            { label: "Over ₹200", min: 200, max: 100000 },
                         ].map((range) => (
                             <button
                                 key={range.label}
@@ -199,7 +205,7 @@ const ProductsSideNav = ({ onFilterChange, filters, onClearFilters }) => {
             </div>
 
             {/* Rating Filter */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+            {/* <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     Customer Rating
                 </h3>
@@ -232,12 +238,12 @@ const ProductsSideNav = ({ onFilterChange, filters, onClearFilters }) => {
                         </label>
                     ))}
                 </div>
-            </div>
+            </div> */}
 
             {/* Clear Filters */}
             <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
                 <button
-                    onClick={onClearFilters}
+                    onClick={handleClearAllFilter}
                     className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                 >
                     Clear All Filters

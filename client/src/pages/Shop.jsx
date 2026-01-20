@@ -70,13 +70,13 @@ const Shop = () => {
             filtered = filtered.filter((product) =>
                 product.category?.toLowerCase().includes(filters.category.toLowerCase())
             );
-        }
+        };
 
         if (filters.brand) {
             filtered = filtered.filter((product) =>
                 product.brand?.toLowerCase().includes(filters.brand.toLowerCase())
             );
-        }
+        };
 
         if (filters.search) {
             filtered = filtered.filter(
@@ -86,7 +86,25 @@ const Shop = () => {
                         ?.toLowerCase()
                         .includes(filters.search.toLowerCase())
             );
-        }
+        };
+
+        // Apply price range filter
+        if (filters.priceRange) {
+            const [min, max] = filters.priceRange.split("-").map(Number);
+
+            filtered = filtered.filter((product) => {
+                const price = Number(product.price);
+                if (isNaN(price)) return false;
+
+                if (min !== "" && max !== "") {
+                    return price >= min && price <= max;
+                };
+
+                if (min !== "") return price >= min;
+                if (max !== "") return price <= max;
+                return true;
+            });
+        };
 
         // Apply sorting
         switch (sortBy) {
@@ -103,7 +121,7 @@ const Shop = () => {
             default:
                 // Keep original order (newest first from API)
                 break;
-        }
+        };
 
         setFilteredProducts(filtered);
         setCurrentPage(1); // Reset to first page when filters change
@@ -316,6 +334,7 @@ const Shop = () => {
                                         </button>
                                     </span>
                                 )}
+
                                 {filters.brand && (
                                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-900 text-white text-sm rounded-full">
                                         Brand: {filters.brand}
@@ -327,6 +346,7 @@ const Shop = () => {
                                         </button>
                                     </span>
                                 )}
+
                                 {filters.search && (
                                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-900 text-white text-sm rounded-full">
                                         Search: {filters.search}
@@ -338,6 +358,19 @@ const Shop = () => {
                                         </button>
                                     </span>
                                 )}
+
+                                {filters.priceRange && (
+                                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-900 text-white text-sm rounded-full">
+                                        Price: ₹{filters.priceRange.replace("-", " - ₹")}
+                                        <button
+                                            onClick={() => handleFilterChange({ priceRange: "" })}
+                                            className="ml-1 hover:text-gray-300"
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                )}
+
                                 <button
                                     onClick={clearFilters}
                                     className="text-sm text-gray-600 hover:text-gray-900 underline"
