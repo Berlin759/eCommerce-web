@@ -1,16 +1,19 @@
-import Container from "./Container";
+import { useState, useEffect } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Dialog, DialogPanel } from "@headlessui/react";
-import { logo } from "../assets/images";
 import { HiOutlineMenu } from "react-icons/hi";
 import { IoCloseOutline } from "react-icons/io5";
-import { useState } from "react";
-import SearchInput from "./SearchInput";
-import Title from "./ui/title";
-import SocialLinks from "./SocialLinks";
 import { IoMdCart } from "react-icons/io";
 import { useSelector } from "react-redux";
 import { FaUserAlt } from "react-icons/fa";
+import { getData } from "../helpers";
+import { config } from "../../config";
+import Container from "./Container";
+import { logo } from "../assets/images";
+import SearchInput from "./SearchInput";
+import Title from "./ui/title";
+import SocialLinks from "./SocialLinks";
+
 export const headerNavigation = [
     // {
     //     title: "Home",
@@ -44,6 +47,7 @@ export const headerNavigation = [
 
 const Header = () => {
     let [isOpen, setIsOpen] = useState(false);
+    const [categories, setCategories] = useState([]);
     const location = useLocation();
     const { products, userInfo, orderCount } = useSelector((state) => state.orebiReducer);
     const categoriesList = useSelector((state) => state.orebiReducer.categoriesList);
@@ -52,6 +56,27 @@ const Header = () => {
     const toggleMenu = () => {
         setIsOpen(!isOpen);
     };
+
+    // Fetch categories from products
+    const fetchCategoryOptions = async () => {
+        try {
+            const data = await getData(`${config?.baseUrl}/api/products`);
+            const products = data?.products || [];
+
+            // Extract unique categories
+            const uniqueCategories = [
+                ...new Set(products.map((p) => p.category).filter(Boolean)),
+            ];
+
+            setCategories(uniqueCategories);
+        } catch (error) {
+            console.error("Error fetching filter options:", error);
+        };
+    };
+
+    useEffect(() => {
+        fetchCategoryOptions();
+    }, []);
 
     return (
         <div className="border-b border-gray-200 sticky top-0 z-50 bg-white/95 backdrop-blur-sm shadow-sm">
@@ -103,19 +128,19 @@ const Header = () => {
                             >
                                 All Categories
                             </Link>
-                            {categoriesList?.length > 0 && categoriesList.map((cat) => (
+                            {categories?.length > 0 && categories.map((category) => (
                                 <Link
-                                    key={cat._id}
-                                    to={`/shop?category=${cat.slug}`}
+                                    key={category}
+                                    to={`/shop?category=${category?.toLowerCase()}`}
                                     onClick={() => window.scrollTo(0, 0)}
                                     className={`block px-4 py-2 text-sm transition-colors
-                                        ${activeCategory === cat.name.toLowerCase()
+                                        ${activeCategory === category?.toLowerCase()
                                             ? "bg-gray-100 text-black font-semibold"
                                             : "text-gray-700 hover:bg-gray-100 hover:text-black"
                                         }
                                     `}
                                 >
-                                    {cat.name}
+                                    {category}
                                 </Link>
                             ))}
                         </div>
@@ -215,22 +240,22 @@ const Header = () => {
                                     </p>
 
                                     <div className="space-y-1">
-                                        {categoriesList?.length > 0 && categoriesList.map((cat) => (
+                                        {categories?.length > 0 && categories.map((category) => (
                                             <Link
-                                                key={cat._id}
-                                                to={`/shop?category=${cat.slug}`}
+                                                key={category}
+                                                to={`/shop?category=${category?.toLowerCase()}`}
                                                 onClick={() => {
                                                     setIsOpen(false);
                                                     window.scrollTo(0, 0);
                                                 }}
                                                 className={`block px-3 py-2 text-sm transition-colors
-                                                    ${activeCategory === cat.name.toLowerCase()
+                                                    ${activeCategory === category?.toLowerCase()
                                                         ? "bg-gray-100 text-black font-semibold"
                                                         : "text-gray-700 hover:bg-gray-50 hover:text-black"
                                                     }
                                                 `}
                                             >
-                                                {cat.name}
+                                                {category}
                                             </Link>
                                         ))}
                                     </div>
