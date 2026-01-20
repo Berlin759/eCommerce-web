@@ -7,6 +7,7 @@ import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import OTPModel from "../models/otpModel.js";
 import settingModel from "../models/settingModel.js";
+import ratingModel from "../models/ratingModel.js";
 
 // Create a new order
 const createOrder = async (req, res) => {
@@ -243,8 +244,21 @@ const getUserOrderById = async (req, res) => {
             return res.status(400).json({ success: false, message: "Order not found" });
         };
 
+        let alreadyRatingAdd = false;
+
         const orderObj = order.toObject();
+
+        const ratingDetails = await ratingModel.findOne({
+            orderId: new ObjectId(orderId),
+            userId: new ObjectId(userId),
+        });
+
+        if (ratingDetails) {
+            alreadyRatingAdd = true;
+        };
+
         orderObj.onlinePaydisPercentage = settingDetails?.discountedPercentage || 0;
+        orderObj.alreadyRatingAdd = alreadyRatingAdd;
 
         return res.status(200).json({ success: true, order: orderObj, message: "Order fetched successfully" });
     } catch (error) {
@@ -378,7 +392,27 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
         };
 
         const shipRes = await createShipment(payload);
+        console.log("CashOnDelivery shipRes----->", shipRes);
+        console.log("CashOnDelivery shipRes.packages----->", shipRes.packages);
+
+        if (!shipRes.success || !shipRes.packages || shipRes.packages.length === 0) {
+            console.error("Delhivery shipment failed:", shipRes.rmk);
+
+            await orderModel.findByIdAndUpdate(orderId, {
+                status: "confirmed",
+                paymentMethod: "cod",
+                paymentStatus: "pending",
+                shipping: {
+                    status: "failed",
+                    error: shipRes?.rmk || "Delhivery error"
+                },
+            });
+
+            return res.status(400).json({ success: false, message: "Your Order shipment failed, please try again later." });
+        };
+
         const waybill = shipRes.packages[0].waybill;
+        console.log("CashOnDelivery waybill----->", waybill);
 
         // Request pickup
         // const today = new Date();
@@ -389,7 +423,7 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
         // const dd = String(today.getDate()).padStart(2, '0');
         // const formattedDate = `${yyyy}-${mm}-${dd}`;
 
-        const tomorrowIST = await getTomorrowInTimezone(process.env.CURRENT_TIME_ZONE);
+        // const tomorrowIST = await getTomorrowInTimezone(process.env.CURRENT_TIME_ZONE);
 
         // const requestBody = {
         //     pickup_time: '11:00:00',

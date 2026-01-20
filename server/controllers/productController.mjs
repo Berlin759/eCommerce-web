@@ -1,8 +1,10 @@
+import { ObjectId } from "mongodb";
 import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
 import { deleteCloudinaryImage } from "../config/cloudinary.js";
 import { calculateDiscountedPercentage } from "../config/general.js";
 import productModel from "../models/productModel.js";
-import fs from "fs";
+import ratingModel from "../models/ratingModel.js";
 
 const cleanupTempFile = (filePath) => {
     try {
@@ -14,7 +16,6 @@ const cleanupTempFile = (filePath) => {
     };
 };
 
-// Add product
 const addProduct = async (req, res) => {
     try {
         const {
@@ -40,14 +41,11 @@ const addProduct = async (req, res) => {
         if (!name || !mrp || !price || !category || !description) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "Missing required fields: name, mrp, price, category, and description are mandatory.",
+                message: "Missing required fields: name, mrp, price, category, and description are mandatory.",
             });
         };
 
-        const images = [image1, image2, image3, image4].filter(
-            (item) => item !== undefined
-        );
+        const images = [image1, image2, image3, image4].filter((item) => item !== undefined);
 
         let imagesUrl = await Promise.all(
             images.map(async (item) => {
@@ -71,7 +69,6 @@ const addProduct = async (req, res) => {
             })
         );
 
-        // Parse tags or split if necessary
         let parsedTags;
         try {
             parsedTags = JSON.parse(tags);
@@ -102,17 +99,16 @@ const addProduct = async (req, res) => {
         const product = new productModel(productData);
         product.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: `${name} added successfully`,
         });
     } catch (error) {
         console.error(error);
-        res.json({ success: false, message: error.message });
-    }
+        return res.status(400).json({ success: false, message: error.message });
+    };
 };
 
-// List products with filtering
 const listProducts = async (req, res) => {
     try {
         const {
@@ -128,60 +124,46 @@ const listProducts = async (req, res) => {
             _perPage = 25,
         } = req.query;
 
-        // Filter by specific ID
         if (_id) {
             const dbProduct = await productModel.findById(_id);
             if (dbProduct) {
-                // Format product for frontend compatibility
                 const formattedProduct = {
                     ...dbProduct.toObject(),
-                    image:
-                        dbProduct.images && dbProduct.images.length > 0
-                            ? dbProduct.images[0]
-                            : "",
+                    image: dbProduct.images && dbProduct.images.length > 0 ? dbProduct.images[0] : "",
                 };
-                return res.json({ success: true, product: formattedProduct });
-            } else {
-                return res
-                    .status(404)
-                    .json({ success: false, message: "Product not found" });
-            }
-        }
 
-        // Build filter object for database query
+                return res.status(200).json({ success: true, product: formattedProduct });
+            } else {
+                return res.status(400).json({ success: false, message: "Product not found" });
+            };
+        };
+
         let filter = {};
 
-        // Filter by availability (only show available products by default)
         if (isAvailable !== "false") {
             filter.isAvailable = true;
-        }
+        };
 
-        // Filter by type
         if (_type) {
             filter._type = _type;
-        }
+        };
 
-        // Filter by brand
         if (brand) {
             filter.brand = brand;
-        }
+        };
 
-        // Filter by category
         if (category) {
             filter.category = category;
-        }
+        };
 
-        // Filter by offer
         if (offer === "true") {
             filter.offer = true;
-        }
+        };
 
-        // Filter by onSale
         if (onSale === "true") {
             filter.onSale = true;
-        }
+        };
 
-        // Search by name or description
         if (_search) {
             const searchRegex = new RegExp(_search, "i");
             filter.$or = [
@@ -189,59 +171,86 @@ const listProducts = async (req, res) => {
                 { description: searchRegex },
                 { tags: { $in: [searchRegex] } },
             ];
-        }
+        };
 
-        // Get database products
         let dbProducts = await productModel.find(filter).sort({ createdAt: -1 });
 
-        // Format database products for frontend compatibility
-        let formattedDbProducts = dbProducts.map((product) => ({
-            ...product.toObject(),
-            image:
-                product.images && product.images.length > 0 ? product.images[0] : "",
-        }));
+        const productRatings = await ratingModel.aggregate([
+            {
+                $group: {
+                    _id: "$productId",
+                    averageRating: { $avg: "$rating" },
+                    totalRatings: { $sum: 1 },
+                },
+            },
+        ]);
+
+        const ratingsMap = {};
+
+        productRatings.forEach((r) => {
+            ratingsMap[r._id.toString()] = {
+                averageRating: Number(r.averageRating.toFixed(1)),
+                totalRatings: r.totalRatings,
+            };
+        });
+
+        const productsWithRating = dbProducts.map((product) => {
+            const ratingData = ratingsMap[product._id.toString()] || {
+                averageRating: 0,
+                totalRatings: 0,
+            };
+
+            return {
+                ...product.toObject(),
+                image: product.images && product.images.length > 0 ? product.images[0] : "",
+                averageRating: ratingData.averageRating,
+                totalRatings: ratingData.totalRatings,
+            };
+        });
+
+        // let formattedDbProducts = dbProducts.map((product) => ({
+        //     ...product.toObject(),
+        //     image: product.images && product.images.length > 0 ? product.images[0] : "",
+        // }));
 
         // Apply pagination
         const page = parseInt(_page, 10) || 1;
         const perPage = parseInt(_perPage, 10) || 25;
         const startIndex = (page - 1) * perPage;
         const endIndex = page * perPage;
-        const paginatedProducts = formattedDbProducts.slice(startIndex, endIndex);
+        const paginatedProducts = productsWithRating.slice(startIndex, endIndex);
 
         // Return response based on whether pagination is requested
         if (_page || _perPage) {
-            res.json({
+            return res.status(200).json({
                 success: true,
                 products: paginatedProducts,
                 currentPage: page,
                 perPage,
-                totalItems: formattedDbProducts.length,
-                totalPages: Math.ceil(formattedDbProducts.length / perPage),
+                totalItems: productsWithRating.length,
+                totalPages: Math.ceil(productsWithRating.length / perPage),
             });
         } else {
-            res.json({
+            return res.status(200).json({
                 success: true,
-                products: formattedDbProducts,
-                total: formattedDbProducts.length,
+                products: productsWithRating,
+                total: productsWithRating.length,
             });
-        }
+        };
     } catch (error) {
         console.error("List products error:", error);
-        res.json({ success: false, message: error.message });
-    }
+        return res.status(400).json({ success: false, message: error.message });
+    };
 };
 
-// Remove product
 const removeProduct = async (req, res) => {
     try {
-        // First, find the product to get its images
         const product = await productModel.findById(req.body._id);
 
         if (!product) {
-            return res.json({ success: false, message: "Product not found" });
-        }
+            return res.status(400).json({ success: false, message: "Product not found" });
+        };
 
-        // Delete all product images from Cloudinary
         if (product.images && Array.isArray(product.images)) {
             for (const imageUrl of product.images) {
                 try {
@@ -252,12 +261,12 @@ const removeProduct = async (req, res) => {
             };
         };
 
-        // Delete the product from database
         await productModel.findByIdAndDelete(req.body._id);
-        res.json({ success: true, message: "Product removed successfully" });
+
+        return res.status(200).json({ success: true, message: "Product removed successfully" });
     } catch (error) {
         console.error(error);
-        res.json({ success: false, message: error.message });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -271,30 +280,48 @@ const singleProducts = async (req, res) => {
                 success: false,
                 message: "Product ID is required",
             });
-        }
+        };
 
         const product = await productModel.findById(productId);
-
         if (!product) {
-            return res.status(404).json({
+            return res.status(400).json({
                 success: false,
                 message: "Product not found",
             });
-        }
+        };
 
         // Only return available products for non-admin requests
         if (!product.isAvailable && !req.user?.role === "admin") {
-            return res.status(404).json({
+            return res.status(400).json({
                 success: false,
                 message: "Product not available",
             });
-        }
+        };
 
-        res.json({ success: true, product });
+        const ratingStats = await ratingModel.aggregate([
+            { $match: { productId: new ObjectId(productId) } },
+            {
+                $group: {
+                    _id: "$productId",
+                    averageRating: { $avg: "$rating" },
+                    totalRatings: { $sum: 1 },
+                },
+            },
+        ]);
+
+        const ratingData = ratingStats[0] || {
+            averageRating: 0,
+            totalRatings: 0,
+        };
+
+        product["averageRating"] = ratingData.averageRating;
+        product["totalRatings"] = ratingData.totalRatings;
+
+        return res.status(200).json({ success: true, product: product });
     } catch (error) {
         console.error("Single product error:", error);
-        res.json({ success: false, message: error.message });
-    }
+        return res.status(400).json({ success: false, message: error.message });
+    };
 };
 
 // Update stock after purchase
@@ -307,36 +334,34 @@ const updateStock = async (req, res) => {
                 success: false,
                 message: "Product ID and valid quantity are required",
             });
-        }
+        };
 
         const product = await productModel.findById(productId);
 
         if (!product) {
-            return res.status(404).json({
+            return res.status(400).json({
                 success: false,
                 message: "Product not found",
             });
-        }
+        };
 
         if (product.stock < quantity) {
             return res.status(400).json({
                 success: false,
                 message: "Insufficient stock available",
             });
-        }
+        };
 
-        // Update stock and sold quantity
         product.stock -= quantity;
         product.soldQuantity += quantity;
 
-        // If stock is 0, mark as unavailable
         if (product.stock === 0) {
             product.isAvailable = false;
-        }
+        };
 
         await product.save();
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: "Stock updated successfully",
             product: {
@@ -348,11 +373,10 @@ const updateStock = async (req, res) => {
         });
     } catch (error) {
         console.error("Update stock error:", error);
-        res.json({ success: false, message: error.message });
-    }
+        return res.status(400).json({ success: false, message: error.message });
+    };
 };
 
-// Update product
 const updateProduct = async (req, res) => {
     try {
         const productId = req.params.id;
@@ -377,30 +401,24 @@ const updateProduct = async (req, res) => {
         const image3 = req.files?.image3 && req.files.image3[0];
         const image4 = req.files?.image4 && req.files.image4[0];
 
-        // Find the existing product
         const existingProduct = await productModel.findById(productId);
         if (!existingProduct) {
-            return res.status(404).json({
+            return res.status(400).json({
                 success: false,
                 message: "Product not found",
             });
-        }
+        };
 
-        // Check for required fields
         if (!name || !mrp || !price || !category || !description) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "Missing required fields: name, mrp, price, category, and description are mandatory.",
+                message: "Missing required fields: name, mrp, price, category, and description are mandatory.",
             });
-        }
+        };
 
-        let imagesUrl = existingProduct.images; // Keep existing images by default
+        let imagesUrl = existingProduct.images;
 
-        // If new images are uploaded, upload them to cloudinary
-        const newImages = [image1, image2, image3, image4].filter(
-            (item) => item !== undefined
-        );
+        const newImages = [image1, image2, image3, image4].filter((item) => item !== undefined);
 
         if (newImages.length > 0) {
             try {
@@ -414,7 +432,6 @@ const updateProduct = async (req, res) => {
                         ],
                     });
 
-                    // Clean up temporary file after successful upload
                     cleanupTempFile(item.path);
 
                     return { index, url: result.secure_url };
@@ -422,24 +439,23 @@ const updateProduct = async (req, res) => {
 
                 const uploadResults = await Promise.all(uploadPromises);
 
-                // Update only the new image positions
                 uploadResults.forEach(({ index, url }) => {
                     if (index < imagesUrl.length) {
                         imagesUrl[index] = url;
                     } else {
                         imagesUrl.push(url);
-                    }
+                    };
                 });
             } catch (error) {
                 console.error("Error uploading images:", error);
-                // Clean up temp files on error
                 newImages.forEach((item) => cleanupTempFile(item.path));
+
                 return res.status(500).json({
                     success: false,
                     message: "Error uploading images",
                 });
-            }
-        }
+            };
+        };
 
         // Parse tags
         let parsedTags;
@@ -474,15 +490,15 @@ const updateProduct = async (req, res) => {
             { new: true }
         );
 
-        res.json({
+        return res.status(200).json({
             success: true,
             message: `${name} updated successfully`,
             product: updatedProduct,
         });
     } catch (error) {
         console.error("Update product error:", error);
-        res.json({ success: false, message: error.message });
-    }
+        return res.status(400).json({ success: false, message: error.message });
+    };
 };
 
 export {

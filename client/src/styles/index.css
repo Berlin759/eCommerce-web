@@ -9,3 +9,7 @@
 .max-w-screen-xl {
     max-width: 1600px;
 }
+
+.max-modal-width {
+    width: 600px;
+}

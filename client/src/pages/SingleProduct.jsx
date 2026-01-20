@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Container from "../components/Container";
+import { FaUserAlt } from "react-icons/fa";
 import { MdStar, MdFavoriteBorder, MdShare, MdTrendingUp } from "react-icons/md";
 import { motion } from "framer-motion";
+import Container from "../components/Container";
 import { getData } from "../helpers/index";
 import { serverUrl } from "../../config";
 import PriceFormat from "../components/PriceFormat";
 import AddToCartButton from "../components/AddToCartButton";
+import api from "../api/axiosInstance";
 
 const SingleProduct = () => {
     const location = useLocation();
@@ -17,7 +19,9 @@ const SingleProduct = () => {
     const [quantity, setQuantity] = useState(1);
     const [isImageZoomed, setIsImageZoomed] = useState(false);
     const [relatedProducts, setRelatedProducts] = useState([]);
+    const [productReview, setProductReview] = useState([]);
     const [loadingRelated, setLoadingRelated] = useState(false);
+    const [loadingReview, setLoadingReview] = useState(false);
 
     useEffect(() => {
         if (location.state?.item) {
@@ -25,33 +29,50 @@ const SingleProduct = () => {
         };
     }, [location.state]);
 
-    // Fetch related products based on category
-    useEffect(() => {
-        const fetchRelatedProducts = async () => {
-            if (productInfo?.category) {
-                setLoadingRelated(true);
-                try {
-                    // Fetch products from the same category
-                    const response = await getData(
-                        `${serverUrl}/api/products?category=${productInfo.category}&_perPage=8`
-                    );
+    const fetchRelatedProducts = async () => {
+        if (productInfo?.category) {
+            setLoadingRelated(true);
+            try {
+                // Fetch products from the same category
+                const response = await getData(
+                    `${serverUrl}/api/products?category=${productInfo.category}&_perPage=8`
+                );
 
-                    if (response?.success && response?.products) {
-                        // Filter out the current product and limit to 4 products
-                        const filtered = response.products
-                            .filter((product) => product._id !== productInfo._id)
-                            .slice(0, 4);
-                        setRelatedProducts(filtered);
-                    }
-                } catch (error) {
-                    console.error("Error fetching related products:", error);
-                } finally {
-                    setLoadingRelated(false);
-                }
-            }
+                if (response?.success && response?.products) {
+                    // Filter out the current product and limit to 4 products
+                    const filtered = response.products
+                        .filter((product) => product._id !== productInfo._id)
+                        .slice(0, 4);
+                    setRelatedProducts(filtered);
+                };
+            } catch (error) {
+                console.error("Error fetching related products:", error);
+            } finally {
+                setLoadingRelated(false);
+            };
         };
+    };
 
+    const fetchProductReviews = async () => {
+        setLoadingReview(true);
+        try {
+            const response = await api.get(`${serverUrl}/api/rating/list/?productId=${productInfo._id}`);
+
+            const data = response.data;
+
+            if (data?.success) {
+                setProductReview(data.ratings);
+            };
+        } catch (error) {
+            console.error("Error fetching products reviews----->", error);
+        } finally {
+            setLoadingReview(false);
+        };
+    };
+
+    useEffect(() => {
         fetchRelatedProducts();
+        fetchProductReviews();
     }, [productInfo]);
 
     // Use product images from database if available, otherwise use mock images
@@ -208,7 +229,7 @@ const SingleProduct = () => {
                                 {Array.from({ length: 5 }).map((_, index) => (
                                     <MdStar
                                         key={index}
-                                        className={`w-5 h-5 ${index < Math.floor(productInfo?.ratings || 0)
+                                        className={`w-5 h-5 ${index < Math.floor(productInfo?.averageRating || 0)
                                             ? "text-yellow-400"
                                             : "text-gray-300"
                                             }`}
@@ -216,8 +237,8 @@ const SingleProduct = () => {
                                 ))}
                             </div>
                             <span className="text-sm text-gray-600">
-                                Rated {productInfo?.ratings?.toFixed(1) || "0.0"} out of 5 based
-                                on {productInfo?.reviews?.length || 0} customer reviews
+                                Rated {productInfo?.averageRating?.toFixed(1) || "0.0"} out of 5 based
+                                on {productInfo?.totalRatings || 0} customer reviews
                             </span>
                         </div>
 
@@ -324,9 +345,7 @@ const SingleProduct = () => {
                                     : "text-gray-500 hover:text-gray-700"
                                     }`}
                             >
-                                {tab === "reviews"
-                                    ? `Reviews (${productInfo?.reviews?.length || 0})`
-                                    : tab}
+                                {tab === "reviews" ? `Reviews (${productReview.length || 0})` : tab}
                             </button>
                         ))}
                     </div>
@@ -354,23 +373,31 @@ const SingleProduct = () => {
                         {activeTab === "reviews" && (
                             <div className="space-y-6">
                                 <h3 className="text-2xl font-light mb-6">Customer Reviews</h3>
-                                {productInfo?.reviews?.length > 0 ? (
+                                {loadingReview ? (
+                                    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                                        <div className="text-center">
+                                            <div className="w-12 h-12 border-4 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                                            <p className="text-gray-600">Loading review details...</p>
+                                        </div>
+                                    </div>
+                                ) : productReview?.length > 0 ? (
                                     <div className="space-y-6">
-                                        {productInfo.reviews.map((review, index) => (
+                                        {productReview.map((review, index) => (
                                             <div
                                                 key={index}
                                                 className="border-b border-gray-200 pb-6 last:border-b-0"
                                             >
                                                 <div className="flex items-start gap-4">
-                                                    <img
-                                                        src={review.image}
-                                                        alt={review.reviewerName}
+                                                    {/* <img
+                                                        src={review.userId.avatar || ""}
+                                                        alt={review.userId.name}
                                                         className="w-12 h-12 rounded-full object-cover"
-                                                    />
+                                                    /> */}
+                                                    <FaUserAlt className="text-green-600 mt-2" />
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-3 mb-2">
                                                             <h4 className="font-medium text-gray-900">
-                                                                {review.reviewerName}
+                                                                {review.userId.name}
                                                             </h4>
                                                             <div className="flex items-center">
                                                                 {Array.from({ length: 5 }).map(
@@ -387,7 +414,7 @@ const SingleProduct = () => {
                                                             </div>
                                                         </div>
                                                         <p className="text-gray-600 leading-relaxed">
-                                                            {review.comment}
+                                                            {review.description}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -461,7 +488,7 @@ const SingleProduct = () => {
                                             {Array.from({ length: 5 }).map((_, starIndex) => (
                                                 <MdStar
                                                     key={starIndex}
-                                                    className={`w-4 h-4 ${starIndex < Math.floor(product.ratings || 4)
+                                                    className={`w-4 h-4 ${starIndex < Math.floor(product.averageRating || 4)
                                                         ? "text-yellow-400"
                                                         : "text-gray-300"
                                                         }`}
@@ -469,7 +496,7 @@ const SingleProduct = () => {
                                             ))}
                                         </div>
                                         <span className="text-sm text-gray-500">
-                                            {product.ratings?.toFixed(1) || "4.0"}
+                                            {product.averageRating?.toFixed(1) || "4.0"}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2 mb-3">

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import Container from "../components/Container";
 import PriceFormat from "../components/PriceFormat";
 import RazorpayPayment from "../components/RazorpayPayment";
@@ -34,6 +35,12 @@ const Checkout = () => {
     const [tracking, setTracking] = useState(null);
     const [trackingLoading, setTrackingLoading] = useState(false);
 
+    const [ratingModal, setRatingModal] = useState(false);
+    const [isRatingAdd, setIsRatingAdd] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [rating, setRating] = useState(0);
+    const [description, setDescription] = useState("");
+
     const fetchOrderDetails = useCallback(async () => {
         try {
             const response = await api.get(`${serverUrl}/api/order/user/${orderId}`);
@@ -48,6 +55,7 @@ const Checkout = () => {
                 setOrder(data.order);
                 setDiscountPercentage(percentageCount);
                 setDiscountAmount(discount_amount_count);
+                setIsRatingAdd(data.order.alreadyRatingAdd);
             } else {
                 toast.error("Order not found");
                 navigate("/orders");
@@ -169,6 +177,40 @@ const Checkout = () => {
         setPaymentStep("selection");
     };
 
+    const openRatingModal = (productId) => {
+        setSelectedProduct(productId);
+        setRating(0);
+        setDescription("");
+        setRatingModal(true);
+    };
+
+    const submitRating = async () => {
+        try {
+            const response = await api.post(`${serverUrl}/api/rating/add`, {
+                orderId: orderId,
+                productId: selectedProduct,
+                rating: rating,
+                description: description,
+            });
+
+            const data = response.data;
+            if (data.success) {
+                toast.success("Rating submitted successfully");
+                setRating(0);
+                setDescription("");
+                setSelectedProduct(null);
+                setRatingModal(false);
+                setIsRatingAdd(true);
+            } else {
+                console.error("submitRating error--->", data.message);
+                toast.error(data.message || "Submit Rating failed");
+            };
+        } catch (error) {
+            console.error("Error Submit Rating---------->", error);
+            toast.error("Failed to submit rating");
+        };
+    };
+
     const getStatusColor = (status) => {
         switch (status) {
             case "pending":
@@ -282,16 +324,18 @@ const Checkout = () => {
                                         {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
                                     </span>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                    <span className="text-sm font-medium text-gray-700">
-                                        Payment Method:
-                                    </span>
-                                    <span
-                                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-green-100 text-green-800 border-green-200"
-                                    >
-                                        {order.paymentMethod.charAt(0).toUpperCase() + order.paymentMethod.slice(1)}
-                                    </span>
-                                </div>
+                                {order.paymentMethod && (
+                                    <div className="flex items-center space-x-2">
+                                        <span className="text-sm font-medium text-gray-700">
+                                            Payment Method:
+                                        </span>
+                                        <span
+                                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-green-100 text-green-800 border-green-200"
+                                        >
+                                            {order.paymentMethod.charAt(0).toUpperCase() + order.paymentMethod.slice(1)}
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="flex items-center space-x-2">
                                     <FaClock className="w-4 h-4 text-gray-500" />
                                     <span className="text-sm text-gray-600">
@@ -328,6 +372,16 @@ const Checkout = () => {
                                                 Quantity: {item.quantity}
                                             </p>
                                         </div>
+                                        {order.status === "delivered" && !isRatingAdd && (
+                                            <div className="flex-1 min-w-0">
+                                                <button
+                                                    onClick={() => openRatingModal(order.item.productId)}
+                                                    className="text-sm text-blue-600 hover:underline"
+                                                >
+                                                    Rate Product
+                                                </button>
+                                            </div>
+                                        )}
                                         <div className="text-right">
                                             <div className="text-lg font-semibold text-gray-900">
                                                 <PriceFormat amount={item.price} />
@@ -615,6 +669,78 @@ const Checkout = () => {
                         </div>
                     </div>
                 </div>
+
+                <AnimatePresence>
+                    {ratingModal && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+                        >
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="bg-white w-full max-w-md rounded-xl shadow-xl p-6"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-lg font-semibold text-gray-900">
+                                        Rate Product
+                                    </h2>
+                                    <button
+                                        onClick={() => setRatingModal(false)}
+                                        className="text-gray-400 hover:text-gray-600"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                {/* Rating Stars */}
+                                <div className="flex justify-center gap-2 mb-4">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            onClick={() => setRating(star)}
+                                            className={`text-3xl transition ${star <= rating ? "text-yellow-400" : "text-gray-300"
+                                                }`}
+                                        >
+                                            ★
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Review Text */}
+                                <textarea
+                                    rows={4}
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder="Write your review (optional)"
+                                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
+                                />
+
+                                {/* Footer */}
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setRatingModal(false)}
+                                        className="w-1/2 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={submitRating}
+                                        disabled={!rating}
+                                        className="w-1/2 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50"
+                                    >
+                                        Submit
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </Container>
         </div>
     );
