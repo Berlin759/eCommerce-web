@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
     addRating,
     listRatings,
+    listByAdminRatings,
     removeRating,
     singleRating,
     updateRating,
@@ -15,8 +16,9 @@ const routeValue = "/api/rating/";
 
 router.post(`${routeValue}add`, userAuth, addRating);
 router.post(`${routeValue}remove`, adminAuth, removeRating);
-router.post(`${routeValue}update/:id`, adminAuth, updateRating);
+router.put(`${routeValue}update/:id`, adminAuth, updateRating);
 router.get(`${routeValue}single`, singleRating);
 router.get(`${routeValue}list`, listRatings);
+router.get(`${routeValue}admin/list`, adminAuth, listByAdminRatings);
 
 export default router;

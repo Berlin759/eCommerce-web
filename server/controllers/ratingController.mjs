@@ -94,6 +94,62 @@ const listRatings = async (req, res) => {
     };
 };
 
+const listByAdminRatings = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, rating, search, sort } = req.query;
+
+        let filter = {};
+
+        if (rating && rating !== "all") {
+            filter.rating = parseInt(rating);
+        };
+
+        if (search) {
+            filter.$or = [
+                { name: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+            ];
+        };
+
+        let sortBy;
+        if (sort === "new") {
+            sortBy = { createdAt: -1 };
+        } else if (sort === "old") {
+            sortBy = { createdAt: 1 };
+        } else if (sort === "high") {
+            sortBy = { rating: -1 };
+        } else if (sort === "low") {
+            sortBy = { rating: 1 };
+        } else {
+            sortBy = { createdAt: -1 };
+        };
+
+        const ratingList = await ratingModel.find(filter)
+            .populate("userId", "name email avatar")
+            .populate("productId", "name images category")
+            .sort(sortBy)
+            // .limit(limit * 1)
+            // .skip((page - 1) * limit);
+
+        const totalRatingCount = await ratingModel.countDocuments(filter);
+
+        return res.status(200).json({
+            success: true,
+            ratings: ratingList,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(totalRatingCount / limit),
+                totalItems: totalRatingCount,
+                itemsPerPage: parseInt(limit),
+            },
+            totalCount: totalRatingCount,
+        });
+    } catch (error) {
+        console.error("List By Admin Ratings error:", error);
+        return res.status(400).json({ success: false, message: error.message });
+    };
+};
+
 const removeRating = async (req, res) => {
     try {
         const { ratingId } = req.body;
@@ -202,6 +258,7 @@ const updateRating = async (req, res) => {
 export {
     addRating,
     listRatings,
+    listByAdminRatings,
     removeRating,
     singleRating,
     updateRating,

@@ -92,8 +92,8 @@ export const getAllContacts = async (req, res) => {
         const contacts = await Contact.find(filter)
             .populate("userId")
             .sort({ _id: -1 })
-            .limit(limit * 1)
-            .skip((page - 1) * limit);
+            // .limit(limit * 1)
+            // .skip((page - 1) * limit);
 
         const total = await Contact.countDocuments(filter);
 

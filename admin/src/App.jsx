@@ -16,6 +16,7 @@ import Inventory from "./pages/Inventory";
 import Categories from "./pages/Categories";
 import Brands from "./pages/Brands";
 import Contacts from "./pages/Contacts";
+import Ratings from "./pages/Ratings";
 import Invoice from "./pages/Invoice";
 import ApiDocumentation from "./pages/ApiDocumentation";
 import LoginPage from "./pages/LoginPage";
@@ -82,6 +83,7 @@ function App() {
                                             <Route path="/categories" element={<Categories />} />
                                             <Route path="/brands" element={<Brands />} />
                                             <Route path="/contacts" element={<Contacts />} />
+                                            <Route path="/ratings" element={<Ratings />} />
                                             <Route path="/invoice" element={<Invoice />} />
                                             <Route path="/api-docs" element={<ApiDocumentation />} />
                                         </Routes>

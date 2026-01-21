@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import PropTypes from "prop-types";
-import axios from "axios";
 import Title from "../components/ui/title";
 import SkeletonLoader from "../components/SkeletonLoader";
 import { serverUrl } from "../../config";
+import api from "../api/axiosInstance";
 
 const Home = () => {
     const { token } = useSelector((state) => state.auth);
@@ -25,11 +25,7 @@ const Home = () => {
             setStats((prev) => ({ ...prev, loading: true, error: null }));
 
             // Fetch real data from server APIs
-            const response = await axios.get(`${serverUrl}/api/dashboard/stats`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            const response = await api.get(`${serverUrl}/api/dashboard/stats`);
 
             if (response.data.success) {
                 const { stats: serverStats } = response.data;

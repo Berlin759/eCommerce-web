@@ -15,6 +15,7 @@ import {
     FaTags,
     FaBook,
     FaEnvelope,
+    FaStar,
 } from "react-icons/fa";
 import { MdDashboard, MdAnalytics, MdInventory } from "react-icons/md";
 import { BiPackage } from "react-icons/bi";
@@ -118,6 +119,13 @@ const Sidebar = () => {
             icon: <FaEnvelope />,
             path: "/contacts",
             description: "Customer messages & support",
+            badge: null,
+        },
+        {
+            title: "Ratings",
+            icon: <FaStar />,
+            path: "/ratings",
+            description: "Customer ratings & feedback",
             badge: null,
         },
         // {
