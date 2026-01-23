@@ -109,10 +109,16 @@ const orderSchema = new mongoose.Schema({
         courier: {
             type: String,
         },
-        waybill: {
+        shipmentId: {
+            type: String,
+        },
+        awb: {
             type: String,
         },
         status: {
+            type: String,
+        },
+        ndrReason: {
             type: String,
         },
         trackingHistory: {
@@ -121,7 +127,7 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
+        enum: ["pending", "confirmed", "shipped", "delivered", "cancelled", "returned"],
         default: "pending",
     },
     paymentMethod: {
@@ -131,7 +137,7 @@ const orderSchema = new mongoose.Schema({
     },
     paymentStatus: {
         type: String,
-        enum: ["pending", "paid", "failed", "refunded"],
+        // enum: ["pending", "paid", "failed", "refunded"],
         default: "pending",
     },
     date: {

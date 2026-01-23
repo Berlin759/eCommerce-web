@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import moment from "moment";
 import { generateOtp, sendOtpOnWhatsApp, generateOrderId, getTomorrowInTimezone } from "../config/general.js";
 import Constants from "../constants/index.js";
-import { createShipment, requestPickup } from "./delhiveryController.js";
+import { createShipment, requestPickup } from "./shipmentController.js";
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import OTPModel from "../models/otpModel.js";
@@ -379,6 +379,7 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
 
         // Create shipment
         let payload = {
+            totalAmount: order.amount || 0,
             customerName: order.address.firstName + order.address.lastName,
             address: order.address.street,
             pincode: order.address.zipcode,
@@ -391,64 +392,39 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
             items: order.items,
         };
 
-        const shipRes = await createShipment(payload);
-        console.log("CashOnDelivery shipRes----->", shipRes);
-        console.log("CashOnDelivery shipRes.packages----->", shipRes.packages);
+        const shipmentData = await createShipment(payload);
+        console.log("CashOnDelivery shipmentData----->", shipmentData);
 
-        if (!shipRes.success || !shipRes.packages || shipRes.packages.length === 0) {
-            console.error("Delhivery shipment failed:", shipRes.rmk);
+        if (!shipmentData.success) {
+            console.log("Delhivery shipment failed:", shipmentData.message);
 
-            await orderModel.findByIdAndUpdate(orderId, {
-                status: "confirmed",
-                paymentMethod: "cod",
-                paymentStatus: "pending",
-                shipping: {
-                    status: "failed",
-                    error: shipRes?.rmk || "Delhivery error"
-                },
-            });
+            order.shipping = {
+                courier: "Shiprocket",
+                shipmentId: "",
+                awb: "",
+                status: "failed",
+            };
+
+            await order.save();
 
             return res.status(400).json({ success: false, message: "Your Order shipment failed, please try again later." });
         };
 
-        const waybill = shipRes.packages[0].waybill;
-        console.log("CashOnDelivery waybill----->", waybill);
+        const shipment = shipmentData.data;
 
-        // Request pickup
-        // const today = new Date();
-        // today.setDate(today.getDate() + 1);
+        await requestPickup(shipment.shipment_id);
 
-        // const yyyy = today.getFullYear();
-        // const mm = String(today.getMonth() + 1).padStart(2, '0');
-        // const dd = String(today.getDate()).padStart(2, '0');
-        // const formattedDate = `${yyyy}-${mm}-${dd}`;
-
-        // const tomorrowIST = await getTomorrowInTimezone(process.env.CURRENT_TIME_ZONE);
-
-        // const requestBody = {
-        //     pickup_time: '11:00:00',
-        //     pickup_date: tomorrowIST,
-        //     pickup_location: process.env.SELLER_ADDRESS,
-        //     expected_package_count: order.items.length,
-        // };
-        await requestPickup(waybill);
-
-        const shipping = {
-            courier: "Delhivery",
-            waybill,
-            status: "Pickup Requested"
+        order.status = "confirmed";
+        order.paymentStatus = "pending";
+        order.paymentMethod = "cod";
+        order.shipping = {
+            courier: "Shiprocket",
+            shipmentId: shipment.shipment_id,
+            awb: shipment.awb_code,
+            status: "Pickup Requested",
         };
 
-        const updateOrder = await orderModel.findByIdAndUpdate(orderId, {
-            shipping: shipping,
-            status: "confirmed",
-            paymentMethod: "cod",
-            paymentStatus: "pending",
-        });
-
-        if (!updateOrder) {
-            return res.status(400).json({ success: false, message: "Your Order has not Confirmed, please try again later." });
-        };
+        await order.save();
 
         return res.status(200).json({ success: true, message: "Your Order has been Confirmed" });
     } catch (error) {

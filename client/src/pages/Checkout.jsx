@@ -83,12 +83,16 @@ const Checkout = () => {
                 toast.success(data.message || "Your Order has been Confirmed");
                 navigate(`/payment-success?order_id=${orderId}`);
             } else {
+                setChosenMethod("");
+                setPaymentStep("selection");
                 console.error("handleCashOnDelivery error--->", data.message);
                 toast.error(data.message || "Failed to Cash On Delivery");
             };
         } catch (error) {
-            console.error("Error handle OTP Send:", error);
-            toast.error("Error sending OTP");
+            setChosenMethod("");
+            setPaymentStep("selection");
+            console.error("Failed to Cash On Delivery:", error);
+            toast.error("Failed to Cash On Delivery");
         };
     };
 
@@ -139,7 +143,7 @@ const Checkout = () => {
         try {
             setTrackingLoading(true);
 
-            const response = await api.post(`${serverUrl}/api/delhivery/order-track`, {
+            const response = await api.post(`${serverUrl}/api/shipment/order-track`, {
                 orderId: orderId,
             });
 

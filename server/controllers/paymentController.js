@@ -2,7 +2,7 @@ import Stripe from "stripe";
 import crypto from "crypto";
 import mongoose from "mongoose";
 import { razorpayInstance } from "../config/razorpay.js";
-import { createShipment, requestPickup } from "./delhiveryController.js";
+import { createShipment, requestPickup } from "./shipmentController.js";
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 
@@ -437,20 +437,27 @@ export const handleRazorpayWebhook = async (req, res) => {
         if (eventType.event === "order.paid") {
             console.log("Webhook eventType payload----->", eventType.payload);
             const orderEntity = eventType.payload.order.entity;
+            const razorpayOrderId = orderEntity.id;
 
-            const order = await orderModel.findOne({ razorpayOrderId: orderEntity.id });
+            const order = await orderModel.findOne({ razorpayOrderId: razorpayOrderId });
             console.log("Webhook order----->", order);
             if (!order) {
-                return res.status(400).json({ success: false, message: "Order not found" });
+                return res.status(400).send("Order not found");
             };
 
-            if (order.paymentStatus === "paid" && order?.shipping && order?.shipping?.waybill) {
+            if (order.paymentStatus === "paid" && order?.shipping && order?.shipping?.awb) {
                 console.log("Duplicate webhook ignored for order:", order.orderId);
-                return res.status(200).json({ success: true });
+                res.sendStatus(200);
             };
+
+            order.paymentStatus = "paid";
+            order.status = "confirmed";
+            order.paymentMethod = "online";
+            await order.save();
 
             // Create shipment
             let payload = {
+                totalAmount: order.amount || 0,
                 customerName: order.address.firstName + order.address.lastName,
                 address: order.address.street,
                 pincode: order.address.zipcode,
@@ -464,49 +471,37 @@ export const handleRazorpayWebhook = async (req, res) => {
                 items: order.items,
             };
 
-            const shipRes = await createShipment(payload);
-            console.log("Webhook shipRes----->", shipRes);
-            console.log("Webhook shipRes.packages----->", shipRes.packages);
+            const shipmentData = await createShipment(payload);
+            console.log("Webhook shipmentData----->", shipmentData);
 
-            if (!shipRes.success || !shipRes.packages || shipRes.packages.length === 0) {
-                console.error("Delhivery shipment failed:", shipRes.rmk);
+            if (!shipmentData.success) {
+                console.log("Delhivery shipment data failed:", shipmentData.message);
 
-                await orderModel.findOneAndUpdate(
-                    { razorpayOrderId: orderEntity.id },
-                    {
-                        status: "confirmed",
-                        paymentStatus: "paid",
-                        shipping: {
-                            status: "failed",
-                            error: shipRes?.rmk || "Delhivery error"
-                        },
-                    },
-                );
+                order.shipping = {
+                    courier: "Shiprocket",
+                    shipmentId: "",
+                    awb: "",
+                    status: "failed",
+                };
 
-                return res.status(200).json({ success: true });
+                await order.save();
+
+                res.sendStatus(200);
             };
 
-            const waybill = shipRes.packages[0].waybill;
-            console.log("Webhook waybill----->", waybill);
+            const shipment = shipmentData.data;
 
             // Request pickup
-            await requestPickup(waybill);
+            await requestPickup(shipment.shipment_id);
 
-            const shipping = {
-                courier: "Delhivery",
-                waybill,
-                status: "Pickup Requested"
+            order.shipping = {
+                courier: "Shiprocket",
+                shipmentId: shipment.shipment_id,
+                awb: shipment.awb_code,
+                status: "Pickup Requested",
             };
 
-            await orderModel.findOneAndUpdate(
-                { razorpayOrderId: orderEntity.id },
-                {
-                    shipping: shipping,
-                    status: "confirmed",
-                    paymentMethod: "online",
-                    paymentStatus: "paid",
-                },
-            );
+            await order.save();
         } else if (eventType.event === "order.failed") {
             await orderModel.findOneAndUpdate(
                 { razorpayOrderId: eventType.payload.order.entity.id },
@@ -535,7 +530,7 @@ export const handleRazorpayWebhook = async (req, res) => {
         //     );
         // };
 
-        return res.status(200).json({ success: true });
+        res.sendStatus(200);
     } catch (error) {
         console.error("webhook error------->", error);
         return res.status(500).json({ success: false, message: error.message });
