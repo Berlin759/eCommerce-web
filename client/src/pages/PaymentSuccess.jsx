@@ -47,7 +47,7 @@ const PaymentSuccess = () => {
                 const data = confirmResponse.data;
                 if (data.success) {
                     setOrder(data.order);
-                    toast.success("Payment confirmed successfully!");
+                    // toast.success("Payment confirmed successfully!");
                 } else {
                     toast.error(confirmData.message || "Payment confirmation failed");
                     navigate("/orders");

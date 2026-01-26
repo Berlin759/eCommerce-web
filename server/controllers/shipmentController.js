@@ -97,35 +97,38 @@ export const createShipment = async (order) => {
         const payload = {
             order_id: order.orderId,
             order_date: new Date().toISOString(),
-            // pickup_location: process.env.DELHIVERY_PICKUP_LOCATION,
-            pickup_location: "Primary",
+            pickup_location: process.env.DELHIVERY_PICKUP_LOCATION,
 
             billing_customer_name: order.customerName,
+            billing_last_name: order.lastName,
             billing_address: order.address,
             billing_city: order.city,
             billing_pincode: order.pincode,
             billing_state: order.state,
+            billing_country: order.country,
             billing_phone: order.phone,
+            billing_email: order.email || "test@example.com",
+            shipping_is_billing: true,
 
             order_items: order.items.map((i) => ({
                 name: i.name,
-                sku: i.productId,
-                units: i.quantity,
-                selling_price: i.price,
+                sku: String(i.productId),
+                units: Number(i.quantity),
+                selling_price: Number(i.price),
             })),
 
             payment_method: order.paymentMethod === "cod" ? "COD" : "Prepaid",
-            sub_total: order.totalAmount,
+            sub_total: Number(order.totalAmount),
 
-            weight: Number(order.weight || 0.5),
-            shipment_length: Number(order.shipmentLength || 10),
-            shipment_width: Number(order.shipmentWidth || 10),
-            shipment_height: Number(order.shipmentHeight || 10),
+            // weight: Number(order.weight || 0.5),
+            // shipment_length: Number(order.shipmentLength || 10),
+            // shipment_width: Number(order.shipmentWidth || 10),
+            // shipment_height: Number(order.shipmentHeight || 10),
 
-            weight: Number(order.weight || 0.5),
             length: Number(order.shipmentLength || 10),
             breadth: Number(order.shipmentWidth || 10),
             height: Number(order.shipmentHeight || 10),
+            weight: Number(order.weight || 0.5),
         };
 
         const res = await axios.post(
@@ -136,13 +139,56 @@ export const createShipment = async (order) => {
 
         return { success: true, message: "", data: res.data };
     } catch (error) {
-        console.error("createShipment error------->", error);
+        console.error("createShipment error------->", error.response?.data || error.message);
         return { success: false, message: error.message };
     }
 };
 
+export const generateAWB = async (shipmentId) => {
+    try {
+        if (!shipmentId) {
+            return { success: false, message: "Shipment Id is required!" };
+        };
+
+        if (process.env.SHIPMENT_TEST_MODE === "true") {
+            return {
+                success: true,
+                data: {
+                    awb_code: "TESTAWB123456",
+                    courier_name: "Mock Courier"
+                },
+            };
+        };
+
+        const token = await getToken();
+
+        const res = await axios.post(`${SHIPMENT_BASE_URL}/courier/assign/awb`,
+            { shipment_id: shipmentId },
+            { headers: { Authorization: `Bearer ${token}` } },
+        );
+        console.log("generateAWB res.data----->", res.data);
+
+        if (res.data.awb_assign_status !== 1) {
+            return { success: false, message: res.data.message || "AWB assignment failed" };
+        };
+
+        return { success: true, message: "", data: res.data.response.data };
+    } catch (error) {
+        console.error("generateAWB error------->", error.response?.data || error.message);
+        return { success: false, message: error.message };
+    };
+};
+
 export const requestPickup = async (shipmentId) => {
     try {
+        if (!shipmentId) {
+            return { success: false, message: "Shipment Id is required!" };
+        };
+
+        if (process.env.SHIPMENT_TEST_MODE === "true") {
+            return { success: true, message: "" };
+        };
+
         const token = await getToken();
 
         const res = await axios.post(`${SHIPMENT_BASE_URL}/courier/generate/pickup`,
@@ -151,9 +197,13 @@ export const requestPickup = async (shipmentId) => {
         );
         console.log("requestPickup res.data----->", res.data);
 
-        return res.data;
+        if (res.data.pickup_status !== 1) {
+            return { success: false, message: res.data.message || "Pickup Request failed" };
+        };
+
+        return { success: true, message: "", data: res.data };
     } catch (error) {
-        console.error("requestPickup error------->", error);
+        console.error("requestPickup error------->", error.response?.data || error.message);
         return { success: false, message: error.message };
     };
 };

@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import moment from "moment";
 import { generateOtp, sendOtpOnWhatsApp, generateOrderId, getTomorrowInTimezone } from "../config/general.js";
 import Constants from "../constants/index.js";
-import { createShipment, requestPickup } from "./shipmentController.js";
+import { createShipment, generateAWB, requestPickup } from "./shipmentController.js";
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import OTPModel from "../models/otpModel.js";
@@ -380,7 +380,9 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
         // Create shipment
         let payload = {
             totalAmount: order.amount || 0,
-            customerName: order.address.firstName + order.address.lastName,
+            customerName: order.address.firstName + " " + order.address.lastName,
+            lastName: order.address.lastName,
+            email: order.address.email,
             address: order.address.street,
             pincode: order.address.zipcode,
             city: order.address.city,
@@ -402,7 +404,7 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
                 courier: "Shiprocket",
                 shipmentId: "",
                 awb: "",
-                status: "failed",
+                status: "shipment_failed",
             };
 
             await order.save();
@@ -411,8 +413,41 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
         };
 
         const shipment = shipmentData.data;
+        console.log("CashOnDelivery shipment----->", shipment);
 
-        await requestPickup(shipment.shipment_id);
+        const createAWB = await generateAWB(shipment.shipment_id);
+        console.log("CashOnDelivery createAWB----->", createAWB);
+        if (!createAWB.success) {
+            console.log("Delhivery Create AWB failed:", createAWB.message);
+
+            order.shipping = {
+                courier: "Shiprocket",
+                shipmentId: "",
+                awb: "",
+                status: "awb_failed",
+            };
+
+            await order.save();
+
+            return res.status(400).json({ success: false, message: "Your Order shipment failed, please try again later." });
+        };
+
+        const pickupRequest = await requestPickup(shipment.shipment_id);
+        console.log("CashOnDelivery pickupRequest----->", pickupRequest);
+        if (!pickupRequest.success) {
+            console.log("Delhivery shipment Request failed:", pickupRequest.message);
+
+            order.shipping = {
+                courier: "Shiprocket",
+                shipmentId: "",
+                awb: "",
+                status: "pickup_request_failed",
+            };
+
+            await order.save();
+
+            return res.status(400).json({ success: false, message: "Your Order shipment request failed, please try again later." });
+        };
 
         order.status = "confirmed";
         order.paymentStatus = "pending";
@@ -420,7 +455,7 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
         order.shipping = {
             courier: "Shiprocket",
             shipmentId: shipment.shipment_id,
-            awb: shipment.awb_code,
+            awb: createAWB.data.awb_code,
             status: "Pickup Requested",
         };
 
