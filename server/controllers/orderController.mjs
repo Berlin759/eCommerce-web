@@ -390,7 +390,7 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
             country: order.address.country,
             phone: order.address.phone,
             orderId: order.orderId,
-            paymentMethod: order.paymentMethod,
+            paymentMethod: "cod",
             items: order.items,
         };
 

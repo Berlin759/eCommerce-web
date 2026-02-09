@@ -130,6 +130,7 @@ export const createShipment = async (order) => {
             height: Number(order.shipmentHeight || 10),
             weight: Number(order.weight || 0.5),
         };
+        console.log("createShipment payload----->", payload);
 
         const res = await axios.post(
             `${SHIPMENT_BASE_URL}/orders/create/adhoc`, payload,

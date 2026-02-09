@@ -469,7 +469,7 @@ export const handleRazorpayWebhook = async (req, res) => {
                 phone: order.address.phone,
                 orderId: order.orderId,
                 order_date: order.date,
-                paymentMethod: order.paymentMethod,
+                paymentMethod: order.paymentMethod || "online",
                 items: order.items,
             };
 
