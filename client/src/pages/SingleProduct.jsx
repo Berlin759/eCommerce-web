@@ -71,8 +71,10 @@ const SingleProduct = () => {
     };
 
     useEffect(() => {
-        fetchRelatedProducts();
-        fetchProductReviews();
+        if (productInfo) {
+            fetchRelatedProducts();
+            fetchProductReviews();
+        };
     }, [productInfo]);
 
     // Use product images from database if available, otherwise use mock images
@@ -284,7 +286,7 @@ const SingleProduct = () => {
                             </div> */}
 
                             <div className="w-full py-4 px-8">
-                                <AddToCartButton item={productInfo} className={"border border-gray-300 rounded-md"} />
+                                <AddToCartButton item={productInfo} className={"border border-gray-300 rounded-md"} showBuyNow={true} />
                             </div>
                             {/* <button className="w-full bg-black text-white py-4 px-8 rounded-md hover:bg-gray-800 transition-all duration-300 font-medium uppercase tracking-wider transform hover:scale-[1.02] active:scale-[0.98]">
                                 Add to Cart
