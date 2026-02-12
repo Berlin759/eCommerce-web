@@ -284,8 +284,12 @@ const Add = ({ token }) => {
                                         value={formData.name}
                                         onChange={handleChange}
                                         className="mt-1"
+                                        maxLength={100}
                                         required
                                     />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {formData.name.length} / 100 characters
+                                    </p>
                                 </div>
                                 {/* <div className="lg:col-span-2">
                                     <Label htmlFor="product name">Product Name *</Label>
