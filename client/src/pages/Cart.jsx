@@ -513,8 +513,8 @@ const Cart = () => {
                                         </div>
 
                                         {loadingAddress ? (
-                                            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                                                <div className="text-center">
+                                            <div className="bg-gray-50 flex items-center justify-center">
+                                                <div className="text-center mt-5 mb-5">
                                                     <div className="w-12 h-12 border-4 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                                                     <p className="text-gray-600">Loading address details...</p>
                                                 </div>
