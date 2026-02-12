@@ -142,14 +142,14 @@ const AddToCartButton = ({ item, className, showBuyNow = false }) => {
                     >
                         Add to cart
                     </button>
-                    {showBuyNow && (
+                    {/* {showBuyNow && ( */}
                         <button
                             onClick={handleBuyNow}
                             className="w-full border border-black text-black text-xs font-medium py-3 px-6 mt-5 uppercase tracking-wide hover:bg-black hover:text-white transition-all duration-200"
                         >
                             Buy Now
                         </button>
-                    )}
+                    {/* )} */}
                 </div>
             )}
         </>

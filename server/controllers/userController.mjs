@@ -314,8 +314,8 @@ const addAddress = async (req, res) => {
         const { label, street, city, state, zipCode, country, phone, isDefault } = req.body;
 
         // Validate required fields
-        if (!label || !street || !city || !state || !zipCode || !country) {
-            return res.status(400).json({ success: false, message: "All address fields are required (label, street, city, state, zipCode, country)", });
+        if (!label || !street || !city || !state || !zipCode || !country || !phone) {
+            return res.status(400).json({ success: false, message: "All address fields are required (label, street, city, state, zipCode, country, phone)", });
         };
 
         const user = await userModel.findById(targetUserId);
@@ -326,7 +326,7 @@ const addAddress = async (req, res) => {
         // If this is being set as default, remove default from other addresses
         if (isDefault) {
             user.addresses.forEach((addr) => (addr.isDefault = false));
-        }
+        };
 
         // If this is the first address, make it default
         const newAddress = {
@@ -336,7 +336,7 @@ const addAddress = async (req, res) => {
             state,
             zipCode,
             country,
-            phone: phone || "",
+            phone: phone,
             isDefault: isDefault || user.addresses.length === 0,
         };
 
@@ -351,7 +351,7 @@ const addAddress = async (req, res) => {
     } catch (error) {
         console.error("Add Address Error", error);
         return res.status(400).json({ success: false, message: error.message });
-    }
+    };
 };
 
 // Update existing address

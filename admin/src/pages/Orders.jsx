@@ -60,7 +60,11 @@ const Orders = () => {
             };
         } catch (error) {
             console.error("Error fetching orders:", error);
-            toast.error("Failed to load orders");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to load orders");
+            };
         } finally {
             setLoading(false);
         }

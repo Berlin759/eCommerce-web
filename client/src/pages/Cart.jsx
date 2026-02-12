@@ -38,6 +38,7 @@ const Cart = () => {
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [showAddressModal, setShowAddressModal] = useState(false);
     const [isAddressesExpanded, setIsAddressesExpanded] = useState(false);
+    const [loadingAddress, setLoadingAddress] = useState(false);
     const [addressForm, setAddressForm] = useState({
         label: "",
         street: "",
@@ -76,6 +77,7 @@ const Cart = () => {
 
     const fetchAddresses = async () => {
         try {
+            setLoadingAddress(true);
             const response = await api.get(`${serverUrl}/api/user/addresses`);
             const data = response.data;
             if (data.success) {
@@ -88,7 +90,9 @@ const Cart = () => {
             }
         } catch (error) {
             console.error("Error fetching addresses:", error);
-        }
+        } finally {
+            setLoadingAddress(false);
+        };
     };
 
     const handleAddAddress = async (e) => {
@@ -119,10 +123,15 @@ const Cart = () => {
             }
         } catch (error) {
             console.error("Error adding address:", error);
-            toast.error("Failed to add address");
+
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to add address");
+            };
         } finally {
             setIsAddingAddress(false);
-        }
+        };
     };
 
     const handlePlaceOrder = async () => {
@@ -162,10 +171,15 @@ const Cart = () => {
                 console.error("error", data);
 
                 toast.error(data.message || "Failed to place order");
-            }
+            };
         } catch (error) {
             console.error("Error placing order:", error);
-            toast.error("Failed to place order");
+
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to place order");
+            };
         } finally {
             setIsPlacingOrder(false);
         }
@@ -498,7 +512,14 @@ const Cart = () => {
                                             </button>
                                         </div>
 
-                                        {addresses.length === 0 ? (
+                                        {loadingAddress ? (
+                                            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                                                <div className="text-center">
+                                                    <div className="w-12 h-12 border-4 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                                                    <p className="text-gray-600">Loading address details...</p>
+                                                </div>
+                                            </div>
+                                        ) : addresses.length === 0 ? (
                                             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                                                 <FaMapMarkerAlt className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                                                 <p className="text-gray-500 text-sm mb-2">
@@ -875,7 +896,7 @@ const Cart = () => {
                                                 country: e.target.value,
                                             })
                                         }
-                                        placeholder="e.g., United States"
+                                        placeholder="e.g. India"
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         required
                                     />
@@ -884,7 +905,7 @@ const Cart = () => {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Phone Number
+                                    Phone Number*
                                 </label>
                                 <input
                                     type="tel"
@@ -892,8 +913,9 @@ const Cart = () => {
                                     onChange={(e) =>
                                         setAddressForm({ ...addressForm, phone: e.target.value })
                                     }
-                                    placeholder="Optional"
+                                    placeholder="Enter your phone number"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
                                 />
                             </div>
 

@@ -48,7 +48,11 @@ const Banners = () => {
             }
         } catch (error) {
             console.error("Fetch banners error:", error);
-            toast.error("Failed to fetch banners");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to fetch banners");
+            };
         } finally {
             setLoading(false);
         }
@@ -140,7 +144,11 @@ const Banners = () => {
             }
         } catch (error) {
             console.error("Submit banner error:", error);
-            toast.error("Failed to save banner");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to save banner");
+            };
         } finally {
             setSubmitting(false);
         }
@@ -165,7 +173,11 @@ const Banners = () => {
             }
         } catch (error) {
             console.error("Delete banner error:", error);
-            toast.error("Failed to delete banner");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to delete banner");
+            };
         }
     };
 

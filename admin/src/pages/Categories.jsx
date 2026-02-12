@@ -43,7 +43,11 @@ const Categories = () => {
             }
         } catch (error) {
             console.error("Fetch categories error:", error);
-            toast.error("Failed to fetch categories");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to fetch categories");
+            };
         } finally {
             setLoading(false);
         }
@@ -126,7 +130,11 @@ const Categories = () => {
             }
         } catch (error) {
             console.error("Submit category error:", error);
-            toast.error("Failed to save category");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to save category");
+            };
         } finally {
             setSubmitting(false);
         }
@@ -159,7 +167,11 @@ const Categories = () => {
             }
         } catch (error) {
             console.error("Delete category error:", error);
-            toast.error("Failed to delete category");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to delete category");
+            };
         }
     };
 

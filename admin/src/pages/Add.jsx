@@ -52,7 +52,11 @@ const Add = ({ token }) => {
             }
         } catch (error) {
             console.error("Error fetching categories---->", error);
-            toast.error("Failed to load categories");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to load categories");
+            };
         } finally {
             setLoadingData(false);
         }

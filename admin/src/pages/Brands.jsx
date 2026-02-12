@@ -45,7 +45,11 @@ const Brands = () => {
             }
         } catch (error) {
             console.error("Fetch brands error:", error);
-            toast.error("Failed to fetch brands");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to fetch brands");
+            };
         } finally {
             setLoading(false);
         }
@@ -129,7 +133,11 @@ const Brands = () => {
             }
         } catch (error) {
             console.error("Submit brand error:", error);
-            toast.error("Failed to save brand");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to save brand");
+            };
         } finally {
             setSubmitting(false);
         }
@@ -154,7 +162,11 @@ const Brands = () => {
             }
         } catch (error) {
             console.error("Delete brand error:", error);
-            toast.error("Failed to delete brand");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to delete brand");
+            };
         }
     };
 

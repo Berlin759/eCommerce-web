@@ -51,7 +51,11 @@ const Contacts = () => {
             };
         } catch (error) {
             console.error("Error fetching contactUs:", error);
-            toast.error("Failed to load contactUs");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to load contactUs");
+            };
         } finally {
             setLoading(false);
         };
@@ -82,7 +86,11 @@ const Contacts = () => {
             }
         } catch (error) {
             console.error("Error updating contactUs--------->", error);
-            toast.error("Failed to update contactUs");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to update contactUs");
+            };
         };
     };
 
@@ -105,7 +113,11 @@ const Contacts = () => {
             }
         } catch (error) {
             console.error("Error deleting contactUs:", error);
-            toast.error("Failed to delete contactUs");
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to delete contactUs");
+            };
         }
     };
 
