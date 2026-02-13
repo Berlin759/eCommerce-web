@@ -10,6 +10,11 @@ const orderSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
+    cancelById: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "user",
+        required: false,
+    },
     razorpayPaymentId: {
         type: String,
         default: "",

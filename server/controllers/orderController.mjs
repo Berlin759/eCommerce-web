@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import moment from "moment";
 import { generateOtp, sendOtpOnWhatsApp, generateOrderId, getTomorrowInTimezone } from "../config/general.js";
 import Constants from "../constants/index.js";
-import { createShipment, generateAWB, requestPickup } from "./shipmentController.js";
+import { cancelShipment, createShipment, generateAWB, requestPickup } from "./shipmentController.js";
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import OTPModel from "../models/otpModel.js";
@@ -468,6 +468,50 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
     };
 };
 
+const cancelUserOrder = async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        const userId = req.user.id;
+
+        if (!orderId) {
+            return res.status(400).json({ success: false, message: "Invalid Order" });
+        };
+
+        const order = await orderModel.findOne({ _id: new ObjectId(orderId), userId: new ObjectId(userId) });
+        if (!order) {
+            return res.status(400).json({ success: false, message: "Order not found" });
+        };
+
+        if (order.status === "delivered") {
+            return res.status(400).json({
+                success: false,
+                message: "Order cannot be cancelled"
+            });
+        };
+
+        if (order.shipping?.awb) {
+            const shipmentCancelDetails = await cancelShipment(order.shipping.awb);
+            console.log("cancelUserOrder shipmentCancelDetails----->", shipmentCancelDetails);
+
+            if (!shipmentCancelDetails.success) {
+                console.log("cancelUserOrder shipment cancel failed------->", shipmentCancelDetails.message);
+
+                return res.status(400).json({ success: false, message: shipmentCancelDetails.message });
+            };
+        };
+
+        order.status = "cancelled";
+        order.cancelById = new ObjectId(userId);
+
+        await order.save();
+
+        return res.status(200).json({ success: true, message: "Your Order Cancel Successfully!" });
+    } catch (error) {
+        console.error("Order Cancel Error-------->", error);
+        return res.status(400).json({ success: false, message: "Something went Wrong, please try again later." });
+    };
+};
+
 // Update order status (Admin)
 const updateOrderStatus = async (req, res) => {
     try {
@@ -611,4 +655,5 @@ export {
     sendOrderOTP,
     verifyOrderOTP,
     updateCashOnDeliveryOrderStatus,
+    cancelUserOrder,
 };

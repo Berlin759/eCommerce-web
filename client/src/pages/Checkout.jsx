@@ -35,6 +35,9 @@ const Checkout = () => {
     const [tracking, setTracking] = useState(null);
     const [trackingLoading, setTrackingLoading] = useState(false);
 
+    const [orderCancelModal, setOrderCancelModal] = useState(false);
+    const [cancelOrderLoading, setCancelOrderLoading] = useState(false);
+
     const [ratingModal, setRatingModal] = useState(false);
     const [isRatingAdd, setIsRatingAdd] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -93,6 +96,37 @@ const Checkout = () => {
             setPaymentStep("selection");
             console.error("Failed to Cash On Delivery:", error);
             toast.error("Failed to Cash On Delivery");
+        };
+    };
+
+    const handleOrderCancel = async () => {
+        try {
+            setCancelOrderLoading(true);
+
+            const response = await api.post(`${serverUrl}/api/order/cancel-order`, {
+                orderId: orderId,
+            });
+
+            setOrderCancelModal(false);
+
+            const data = response.data;
+            if (data.success) {
+                toast.success(data.message || "Your Order has been cancel successfully!");
+                navigate("/orders");
+            } else {
+                console.error("handleOrderCancel error--->", data.message);
+                toast.error(data.message || "Failed to Order Cancel");
+            };
+        } catch (error) {
+            console.error("Failed to Order Cancel:", error);
+
+            if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to Order Cancel");
+            };
+        } finally {
+            setCancelOrderLoading(false);
         };
     };
 
@@ -340,12 +374,14 @@ const Checkout = () => {
                                         </span>
                                     </div>
                                 )}
-                                <div className="flex items-center space-x-2">
-                                    <FaClock className="w-4 h-4 text-gray-500" />
-                                    <span className="text-sm text-gray-600">
-                                        Placed on {new Date(order.date).toLocaleDateString()}
-                                    </span>
-                                </div>
+                                {order.status !== "cancelled" && (
+                                    <div className="flex items-center space-x-2">
+                                        <FaClock className="w-4 h-4 text-gray-500" />
+                                        <span className="text-sm text-gray-600">
+                                            Placed on {new Date(order.date).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -600,7 +636,7 @@ const Checkout = () => {
                             )}
 
 
-                            {order.paymentStatus === "pending" && order.paymentMethod === "cod" && (
+                            {order.paymentStatus === "pending" && order.status !== "cancelled" && order.paymentMethod === "cod" && (
                                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                                     <div className="flex items-center gap-3">
                                         <FaMoneyBillWave className="w-6 h-6 text-green-600" />
@@ -616,7 +652,7 @@ const Checkout = () => {
                                 </div>
                             )}
 
-                            {order.paymentStatus === "paid" && (
+                            {order.paymentStatus === "paid" && order.status !== "cancelled" && (
                                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                                     <div className="flex items-center gap-3">
                                         <FaCheckCircle className="w-6 h-6 text-green-600" />
@@ -627,6 +663,18 @@ const Checkout = () => {
                                             <p className="text-sm text-green-700">
                                                 Your payment has been processed successfully
                                             </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {order.status === "cancelled" && (
+                                <div className="p-4 bg-red-500 border border-red-200 rounded-lg">
+                                    <div className="flex items-center gap-3">
+                                        <div>
+                                            <h4 className="font-semibold text-white">
+                                                Your order has been cancelled.
+                                            </h4>
                                         </div>
                                     </div>
                                 </div>
@@ -662,6 +710,17 @@ const Checkout = () => {
                                 </div>
                             )}
 
+                            {order.status !== "delivered" && order.status !== "cancelled" && (
+                                <div className="mt-6 pt-6 border-t border-gray-200">
+                                    <button
+                                        onClick={() => setOrderCancelModal(true)}
+                                        className="w-full bg-red-500 text-white py-3 px-4 rounded-lg transition-colors font-medium"
+                                    >
+                                        Cancel Order
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="mt-6 pt-6 border-t border-gray-200">
                                 <button
                                     onClick={() => navigate("/orders")}
@@ -674,6 +733,7 @@ const Checkout = () => {
                     </div>
                 </div>
 
+                {/* Add Rating Modal */}
                 <AnimatePresence>
                     {ratingModal && (
                         <motion.div
@@ -739,6 +799,54 @@ const Checkout = () => {
                                         className="w-1/2 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50"
                                     >
                                         Submit
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Order Cancel Modal */}
+                <AnimatePresence>
+                    {orderCancelModal && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+                        >
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="bg-white w-full max-w-md rounded-xl shadow-xl p-6"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="flex justify-center items-center mb-4">
+                                    <h2 className="text-lg font-semibold text-red-900">
+                                        Order Cancellation Confirmation
+                                    </h2>
+                                </div>
+
+                                <h2 className="mb-4">
+                                    <span className="text-lg font-semibold text-balck-900">! Are you sure,</span> you have cancel this order?
+                                </h2>
+
+                                {/* Footer */}
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setOrderCancelModal(false)}
+                                        className="w-1/2 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleOrderCancel}
+                                        disabled={cancelOrderLoading}
+                                        className="w-1/2 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50"
+                                    >
+                                        Confirm
                                     </button>
                                 </div>
                             </motion.div>

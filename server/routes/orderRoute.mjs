@@ -11,6 +11,7 @@ import {
     sendOrderOTP,
     verifyOrderOTP,
     updateCashOnDeliveryOrderStatus,
+    cancelUserOrder,
 } from "../controllers/orderController.mjs";
 import adminAuth from "../middleware/adminAuth.js";
 import userAuth from "../middleware/userAuth.js";
@@ -26,6 +27,7 @@ router.get(`${routeValue}user/:orderId`, userAuth, getUserOrderById);
 router.post(`${routeValue}send-otp`, userAuth, sendOrderOTP);
 router.post(`${routeValue}verify-otp`, userAuth, verifyOrderOTP);
 router.post(`${routeValue}updateCashOnDelivery`, userAuth, updateCashOnDeliveryOrderStatus);
+router.post(`${routeValue}cancel-order`, userAuth, cancelUserOrder);
 
 // Admin routes
 router.get(`${routeValue}admin/orderDetails/:orderId`, adminAuth, getAdminUserOrdersDetails);

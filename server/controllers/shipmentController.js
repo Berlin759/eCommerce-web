@@ -266,14 +266,36 @@ export const cancelOrder = async (req, res) => {
 };
 
 export const cancelShipment = async (awb) => {
-    const token = await getToken();
+    try {
+        console.log("cancelShipment awb----->", awb);
+        if (!awb) {
+            return { success: false, message: "shipping awb required!" };
+        };
 
-    const res = await axios.post(
-        `${process.env.SHIPMENT_BASE_URL}/orders/cancel`,
-        { awbs: [awb] },
-        { headers: { Authorization: `Bearer ${token}` } }
-    );
-    console.log("cancelShipment res data----->", res.data);
+        const token = await getToken();
+        console.log("cancelShipment token----->", token);
 
-    return res.data;
+        if (!token) {
+            return { success: false, message: "Your Order cancel failed, please try again later." };
+        };
+
+        const response = await axios.post(
+            `${process.env.SHIPMENT_BASE_URL}/orders/cancel/shipment/awbs`,
+            { awbs: [awb] },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        console.log("cancelShipment response data----->", response.data);
+
+        if (response.data.message && response.data.message !== "Shipment cancelled successfully") {
+            return {
+                success: false,
+                message: response.data.message,
+            };
+        };
+
+        return { success: true, message: "Shipment cancelled successfully", data: response.data };
+    } catch (error) {
+        console.error("cancelShipment error------->", error.response?.data || error.message);
+        return { success: false, message: error.response?.data?.message || error.message };
+    };
 };
