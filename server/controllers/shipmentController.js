@@ -272,6 +272,10 @@ export const cancelShipment = async (awb) => {
             return { success: false, message: "shipping awb required!" };
         };
 
+        if (process.env.SHIPMENT_TEST_MODE === "true") {
+            return { success: true, message: "Shipment cancelled successfully" };
+        };
+
         const token = await getToken();
         console.log("cancelShipment token----->", token);
 
