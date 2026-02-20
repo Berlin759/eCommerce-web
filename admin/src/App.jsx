@@ -10,6 +10,7 @@ import List from "./pages/List";
 import Orders from "./pages/Orders";
 import Checkout from "./pages/Checkout";
 import Banners from "./pages/Banners";
+import Videos from "./pages/Videos";
 import Users from "./pages/Users";
 import Analytics from "./pages/Analytics";
 import Inventory from "./pages/Inventory";
@@ -75,6 +76,7 @@ function App() {
                                                     <Route path="/orders" element={<Orders token={token} />} />
                                                     <Route path="/checkout/:orderId" element={<Checkout token={token} />} />
                                                     <Route path="/banners" element={<Banners token={token} />} />
+                                                    <Route path="/videos" element={<Videos token={token} />} />
                                                     <Route path="/users" element={<Users token={token} />} />
                                                     <Route path="/settings" element={<Settings token={token} />} />
                                                 </>

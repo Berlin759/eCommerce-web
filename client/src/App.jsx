@@ -5,6 +5,7 @@ import BestSellers from "./components/homeProducts/BestSellers";
 import NewArrivals from "./components/homeProducts/NewArrivals";
 import ProductOfTheYear from "./components/homeProducts/ProductOfTheYear";
 import SpecialOffers from "./components/homeProducts/SpecialOffers";
+import Videos from "./components/homeProducts/Videos";
 import { jwtDecode } from "jwt-decode";
 import { useDispatch } from "react-redux";
 import {
@@ -114,6 +115,7 @@ function App() {
                 {/* <ProductOfTheYear /> */}
                 <SpecialOffers />
             </Container>
+            <Videos />
         </main>
     );
 };

@@ -16,6 +16,7 @@ import {
     FaBook,
     FaEnvelope,
     FaStar,
+    FaVideo,
 } from "react-icons/fa";
 import { MdDashboard, MdAnalytics, MdInventory } from "react-icons/md";
 import { BiPackage } from "react-icons/bi";
@@ -99,6 +100,13 @@ const Sidebar = () => {
             icon: <HiOutlineClipboardList />,
             path: "/banners",
             description: "Manage over banners",
+            badge: null,
+        },
+        {
+            title: "Videos",
+            icon: <FaVideo />,
+            path: "/videos",
+            description: "Manage videos",
             badge: null,
         },
         {
