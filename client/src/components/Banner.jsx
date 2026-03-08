@@ -64,9 +64,10 @@ const Banner = () => {
                 const activeBanners = data.banners.filter((b) => b.isActive);
                 if(activeBanners && activeBanners.length > 0){
                     setBanners(activeBanners);
-                } else {
-                    setBanners(bannerData);
                 };
+                // else {
+                //     setBanners(bannerData);
+                // };
             };
         } catch (error) {
             console.error("Error fetching banners:", error);

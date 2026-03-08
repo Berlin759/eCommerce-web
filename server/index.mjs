@@ -16,6 +16,8 @@ const httpServer = http.createServer(app);
 const allowedOrigins = [
     process.env.ADMIN_URL,
     process.env.CLIENT_URL,
+    process.env.ADMIN_LIVE_URL,
+    process.env.CLIENT_LIVE_URL,
     // Add production URLs
     // Add localhost for development
     "http://localhost:5174",
