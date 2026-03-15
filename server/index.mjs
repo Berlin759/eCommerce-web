@@ -65,12 +65,12 @@ routeFiles.map(async (file) => {
     app.use("/", routeModule.default);
 });
 
-app.get("/health", (req, res) => {
-    res.status(200).send("Server Running");
-});
-
 app.get("/", (req, res) => {
     res.status(200).send("API Active Now");
+});
+
+app.get("/health", (req, res) => {
+    res.status(200).send("Server Running");
 });
 
 // app.listen(port, () => {
