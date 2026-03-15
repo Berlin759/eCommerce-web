@@ -6,6 +6,8 @@ import http from "http";
 import { fileURLToPath } from "url";
 import path from "path";
 import { readdirSync } from "fs";
+import cron from "node-cron";
+import axios from "axios";
 import dbConnect from "./config/mongodb.js";
 import connectCloudinary from "./config/cloudinary.js";
 
@@ -51,7 +53,7 @@ app.use(express.json({ limit: "500mb" }));
 app.use(express.urlencoded({ extended: true, limit: "500mb" }));
 
 // dbConnect();
-connectCloudinary();
+// connectCloudinary();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,20 +65,63 @@ routeFiles.map(async (file) => {
     app.use("/", routeModule.default);
 });
 
+app.get("/health", (req, res) => {
+    res.status(200).send("Server Running");
+});
+
 app.get("/", (req, res) => {
-    res.send("You should not be here");
+    res.status(200).send("API Active Now");
 });
 
 // app.listen(port, () => {
 //     console.log(`Server is running on ${port}`);
 // });
 
-dbConnect().then(() => {
-    httpServer.listen(port, () => {
-        console.log("Server is running on PORT ----->", port);
-        console.log("Server URL ----->", process.env.SERVER_URL);
-    });
-}).catch((error) => {
-    console.log("Error in connecting to database ----->", error);
-    return process.exit(1);
+const services = [
+    process.env.CLIENT_LIVE_URL,
+    process.env.ADMIN_LIVE_URL,
+    process.env.SERVER_LIVE_URL + "/health",
+];
+
+cron.schedule("*/5 * * * *", async () => {
+    console.log("Running keep-alive ping...");
+
+    await Promise.all(
+        services.map((url) =>
+            axios.get(url).catch(() => console.log("Ping failed:", url))
+        )
+    );
+
+    // for (const url of services) {
+    //     try {
+    //         const res = await axios.get(url);
+    //         console.log(`Ping success: ${url} -> ${res.status}`);
+    //     } catch (error) {
+    //         console.log(`Ping failed: ${url}`);
+    //     };
+    // };
+});
+
+// dbConnect().then(() => {
+//     httpServer.listen(port, () => {
+//         console.log("Server is running on PORT ----->", port);
+//         console.log("Server URL ----->", process.env.SERVER_URL);
+//     });
+// }).catch((error) => {
+//     console.log("Error in connecting to database ----->", error);
+//     return process.exit(1);
+// });
+
+httpServer.listen(port, () => {
+    console.log("Server is running on PORT ----->", port);
+    console.log("Server URL ----->", process.env.SERVER_URL);
+
+    dbConnect()
+        .then(() => console.log("Database connected successfully!"))
+        .catch((error) => {
+            console.log("Error in connecting to database ----->", error);
+            return process.exit(1);
+        });
+
+    connectCloudinary();
 });
