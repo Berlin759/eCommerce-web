@@ -34,8 +34,8 @@ const Login = ({ setToken }) => {
             <div className="w-full max-w-md">
                 {/* Logo Section */}
                 <div className="text-center mb-8">
-                    <div className="bg-white p-3 rounded-md shadow-lg inline-block mb-4 transform hover:scale-105 transition-transform duration-300">
-                        <img src={logo} alt="logo" className="w-20" />
+                    <div className="bg-white p-3 rounded-md shadow-lg inline-block mb-4 transform hover:scale-105 transition-transform duration-300 web-lab">
+                        <img src={logo} alt="logo" className="web-lab-img" style={{ width: `125px` }} />
                     </div>
                     <h1 className="text-3xl font-bold text-gray-800 mb-2">Admin Panel</h1>
                     <p className="text-gray-600">

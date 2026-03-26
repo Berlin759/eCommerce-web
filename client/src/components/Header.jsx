@@ -82,8 +82,8 @@ const Header = () => {
         <div className="border-b border-gray-200 sticky top-0 z-50 bg-white/95 backdrop-blur-sm shadow-sm">
             {" "}
             <Container className="py-4 lg:py-6 flex items-center gap-x-3 md:gap-x-7 justify-between">
-                <Link to={"/"} className="flex-shrink-0">
-                    <img src={logo} alt="logo" className="h-5 w-auto" />
+                <Link to={"/"} className="flex-shrink-0 web-lab">
+                    <img src={logo} alt="logo" className="w-auto" />
                 </Link>
 
                 <SearchInput />

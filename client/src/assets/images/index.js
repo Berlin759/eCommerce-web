@@ -1,4 +1,5 @@
-import logo from "./orebiLogo.png";
+import logo from "./neelhari-logo.png";
+// import logo from "./orebiLogo.png";
 import logoLight from "./logoLight.png";
 import bannerImgOne from "./banner/slideOne.png";
 import bannerImgTwo from "./banner/slideTwo.png";
