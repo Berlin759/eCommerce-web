@@ -845,7 +845,6 @@ const List = ({ token }) => {
                                         <Input
                                             type="number"
                                             min="0"
-                                            max="100"
                                             name="price"
                                             value={formData.price}
                                             onChange={handleInputChange}
