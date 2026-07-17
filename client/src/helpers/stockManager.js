@@ -168,7 +168,7 @@ export const calculateDiscountedPrice = (price, discountPercentage = 10) => {
 /**
  * Calculate Percentage
  * @param {number} mrp - Original price
- * @param {number} price - discount price
+ * @param {number} price - final price
  * @returns {number} - Discounted percentage
  */
 export const calculateDiscountedPercentage = (firstPrice, secondPrice) => {

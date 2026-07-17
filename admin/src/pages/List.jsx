@@ -395,7 +395,7 @@ const List = ({ token }) => {
                                                 MRP
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Discount Price
+                                                Final Price
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Stock
@@ -503,7 +503,7 @@ const List = ({ token }) => {
                                                 MRP
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Discount Price
+                                                Final Price
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Stock
@@ -841,7 +841,7 @@ const List = ({ token }) => {
                                     </div>
 
                                     <div className="flex flex-col">
-                                        <Label htmlFor="price">Discount Price</Label>
+                                        <Label htmlFor="price">Final Price</Label>
                                         <Input
                                             type="number"
                                             min="0"

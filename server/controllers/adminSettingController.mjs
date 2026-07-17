@@ -124,9 +124,79 @@ const updateDiscountedPercentage = async (req, res) => {
     };
 };
 
+const toggleMaintenanceMode = async (req, res) => {
+    try {
+        const adminId = req.user._id;
+        const { maintenanceMode, maintenanceMessage } = req.body;
+
+        const adminDetails = await userModel.findById(adminId);
+        if (!adminDetails) {
+            return res.status(400).json({ success: false, message: "Admin details not found" });
+        };
+
+        const updatePayload = {};
+        if (typeof maintenanceMode === "boolean") {
+            updatePayload.maintenanceMode = maintenanceMode;
+        }
+        if (maintenanceMessage !== undefined) {
+            updatePayload.maintenanceMessage = maintenanceMessage;
+        };
+
+        const updated = await settingModel.findOneAndUpdate(
+            { adminId: adminDetails._id },
+            { $set: updatePayload },
+            { new: true },
+        );
+        if (!updated) {
+            return res.status(400).json({ success: false, message: "Maintenance mode update failed" });
+        };
+
+        return res.status(200).json({
+            success: true,
+            message: `Maintenance mode ${updated.maintenanceMode ? "enabled" : "disabled"}`,
+            setting: {
+                maintenanceMode: updated.maintenanceMode,
+                maintenanceMessage: updated.maintenanceMessage,
+            },
+        });
+    } catch (error) {
+        console.error("Toggle Maintenance Mode Error", error);
+        return res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+const getMaintenanceStatus = async (req, res) => {
+    try {
+        const setting = await settingModel.findOne().sort({ createdAt: -1 });
+
+        if (!setting) {
+            return res.status(200).json({
+                success: true,
+                maintenanceMode: false,
+                maintenanceMessage: "",
+            });
+        };
+
+        return res.status(200).json({
+            success: true,
+            maintenanceMode: setting.maintenanceMode || false,
+            maintenanceMessage: setting.maintenanceMessage || "",
+        });
+    } catch (error) {
+        console.error("Get Maintenance Status Error", error);
+        return res.status(200).json({
+            success: true,
+            maintenanceMode: false,
+            maintenanceMessage: "",
+        });
+    }
+};
+
 export {
     getAdminProfile,
     getSettingDetails,
     changePassword,
     updateDiscountedPercentage,
+    toggleMaintenanceMode,
+    getMaintenanceStatus,
 };

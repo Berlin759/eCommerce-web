@@ -5,10 +5,10 @@
     "main": "index.mjs",
     "type": "module",
     "scripts": {
-        "start": "NODE_ENV=production node index.mjs",
-        "dev": "NODE_ENV=development nodemon index.mjs",
-        "server": "NODE_ENV=development nodemon index.mjs",
-        "prod": "NODE_ENV=production node index.mjs"
+        "start": "node index.mjs",
+        "dev": "nodemon index.mjs",
+        "server": "nodemon index.mjs",
+        "prod": "node index.mjs"
     },
     "keywords": [],
     "author": "",

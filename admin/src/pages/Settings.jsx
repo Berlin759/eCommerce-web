@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { FaCog, FaUser, FaDatabase, FaShieldVirus, FaBell } from "react-icons/fa";
+import { FaCog, FaUser, FaDatabase, FaShieldVirus, FaBell, FaTools } from "react-icons/fa";
 import Title from "../components/ui/title";
 import Input, { Label } from "../components/ui/input";
 import { serverUrl } from "../../config";
@@ -20,6 +20,9 @@ const Settings = ({ token }) => {
     const [showOldPassword, setShowOldPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [maintenanceMode, setMaintenanceMode] = useState(false);
+    const [maintenanceMessage, setMaintenanceMessage] = useState("We are currently performing scheduled maintenance. Please check back later.");
+    const [isMaintenanceLoading, setMaintenanceLoading] = useState(false);
 
     // Fetch all setting
     const fetchSetting = async () => {
@@ -30,6 +33,8 @@ const Settings = ({ token }) => {
             const data = response.data;
             if (data.success) {
                 setDiscountedPercentage(data.setting.discountedPercentage);
+                setMaintenanceMode(data.setting.maintenanceMode || false);
+                setMaintenanceMessage(data.setting.maintenanceMessage || "We are currently performing scheduled maintenance. Please check back later.");
             } else {
                 toast.error(data.message || "Failed to fetch settings");
             };
@@ -152,6 +157,70 @@ const Settings = ({ token }) => {
             toast.error(error?.message);
         } finally {
             setPercentageLoading(false);
+        };
+    };
+
+    const handleMaintenanceToggle = async () => {
+        try {
+            setMaintenanceLoading(true);
+
+            const payload = {
+                maintenanceMode: !maintenanceMode,
+                maintenanceMessage: maintenanceMessage,
+            };
+
+            const response = await api.put(
+                `${serverUrl}/api/setting/toggle-maintenance`,
+                payload,
+            );
+
+            const data = response?.data;
+            if (data?.success) {
+                setMaintenanceMode(data.setting.maintenanceMode);
+                toast.success(data?.message);
+            } else {
+                toast.error(data?.message || "Failed to update maintenance mode");
+            };
+        } catch (error) {
+            console.error("Toggle Maintenance Mode Error-------->", error);
+            toast.error(error?.response?.data?.message || error?.message);
+        } finally {
+            setMaintenanceLoading(false);
+        };
+    };
+
+    const handleMaintenanceMessageUpdate = async (e) => {
+        try {
+            e.preventDefault();
+
+            if (!maintenanceMessage.trim()) {
+                toast.error("Please enter a maintenance message");
+                return;
+            };
+
+            setMaintenanceLoading(true);
+
+            const payload = {
+                maintenanceMode: maintenanceMode,
+                maintenanceMessage: maintenanceMessage,
+            };
+
+            const response = await api.put(
+                `${serverUrl}/api/setting/toggle-maintenance`,
+                payload,
+            );
+
+            const data = response?.data;
+            if (data?.success) {
+                toast.success("Maintenance message updated");
+            } else {
+                toast.error(data?.message || "Failed to update");
+            };
+        } catch (error) {
+            console.error("Update Maintenance Message Error-------->", error);
+            toast.error(error?.response?.data?.message || error?.message);
+        } finally {
+            setMaintenanceLoading(false);
         };
     };
 
@@ -301,6 +370,70 @@ const Settings = ({ token }) => {
                                 className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
                             >
                                 {isPercentageLoading ? "Submitting..." : "Update Percentage"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {/* Maintenance Mode */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
+                <div className="p-6 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                        <FaTools className="text-orange-500" />
+                        <h3 className="text-lg font-semibold text-gray-900">Maintenance Mode</h3>
+                    </div>
+                </div>
+                <div className="p-6">
+                    <div className="flex items-center justify-between py-4 border-b border-gray-100">
+                        <div>
+                            <p className="font-medium text-gray-900">Enable Maintenance Mode</p>
+                            <p className="text-sm text-gray-500">
+                                When enabled, all clients will see the maintenance page instead of the website
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleMaintenanceToggle}
+                            disabled={isMaintenanceLoading}
+                            className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                                maintenanceMode ? "bg-red-600" : "bg-gray-300"
+                            } ${isMaintenanceLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                        >
+                            <span
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-200 ${
+                                    maintenanceMode ? "translate-x-8" : "translate-x-1"
+                                }`}
+                            />
+                        </button>
+                    </div>
+
+                    {maintenanceMode && (
+                        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-red-700 text-sm font-medium">
+                                ⚠️ Maintenance mode is currently ACTIVE. All client pages are blocked.
+                            </p>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleMaintenanceMessageUpdate} className="mt-6">
+                        <div className="flex flex-col">
+                            <Label htmlFor="maintenanceMessage">Maintenance Message</Label>
+                            <textarea
+                                id="maintenanceMessage"
+                                rows={3}
+                                value={maintenanceMessage}
+                                onChange={(e) => setMaintenanceMessage(e.target.value)}
+                                className="mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                                placeholder="Message to show users during maintenance..."
+                            />
+                        </div>
+                        <div className="flex justify-end mt-4">
+                            <button
+                                type="submit"
+                                disabled={isMaintenanceLoading}
+                                className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+                            >
+                                {isMaintenanceLoading ? "Updating..." : "Update Message"}
                             </button>
                         </div>
                     </form>

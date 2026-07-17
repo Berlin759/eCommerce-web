@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Header from "./Header";
 import { Outlet, ScrollRestoration } from "react-router-dom";
 import Footer from "./Footer";
@@ -9,8 +10,50 @@ import { PersistGate } from "redux-persist/integration/react";
 import { Toaster } from "react-hot-toast";
 import MainLoader from "./MainLoader";
 import ServicesTag from "./ServicesTag";
+import Maintenance from "../pages/Maintenance";
+import { serverUrl } from "../../config";
 
 const RootLayout = () => {
+    const [isMaintenance, setIsMaintenance] = useState(false);
+    const [maintenanceMessage, setMaintenanceMessage] = useState("");
+    const [isChecking, setIsChecking] = useState(true);
+
+    useEffect(() => {
+        const checkMaintenanceMode = async () => {
+            try {
+                const response = await fetch(`${serverUrl}/api/setting/maintenance-status`);
+                const data = await response.json();
+
+                if (data.success && data.maintenanceMode) {
+                    setIsMaintenance(true);
+                    setMaintenanceMessage(data.maintenanceMessage);
+                }
+            } catch (error) {
+                console.error("Failed to check maintenance status:", error);
+            } finally {
+                setIsChecking(false);
+            }
+        };
+
+        checkMaintenanceMode();
+
+        const interval = setInterval(checkMaintenanceMode, 60000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    if (isChecking) {
+        return <MainLoader />;
+    }
+
+    if (isMaintenance) {
+        return (
+            <Provider store={store}>
+                <Maintenance message={maintenanceMessage} />
+            </Provider>
+        );
+    }
+
     return (
         <Provider store={store}>
             <PersistGate loading={<MainLoader />} persistor={persistor}>

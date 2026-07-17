@@ -356,7 +356,7 @@ const Add = ({ token }) => {
                                     />
                                 </div>
                                 <div className="flex flex-col">
-                                    <Label htmlFor="price">Discount Price *</Label>
+                                    <Label htmlFor="price">Final Price *</Label>
                                     <Input
                                         type="number"
                                         step="0.01"

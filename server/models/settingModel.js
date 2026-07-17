@@ -11,6 +11,14 @@ const settingSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        maintenanceMode: {
+            type: Boolean,
+            default: false,
+        },
+        maintenanceMessage: {
+            type: String,
+            default: "We are currently performing scheduled maintenance. Please check back later.",
+        },
     },
     {
         minimize: false,
