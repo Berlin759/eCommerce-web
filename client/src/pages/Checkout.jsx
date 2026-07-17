@@ -8,7 +8,6 @@ import toast from "react-hot-toast";
 import {
     FaCheckCircle,
     FaCreditCard,
-    FaMoneyBillWave,
     FaClock,
     FaMapMarkerAlt,
     FaUser,
@@ -29,9 +28,6 @@ const Checkout = () => {
     const [loading, setLoading] = useState(true);
     const [paymentStep, setPaymentStep] = useState("selection");
     const [chosenMethod, setChosenMethod] = useState(null);
-    const [otpModal, setOtpModal] = useState(false);
-    const [otp, setOtp] = useState("")
-    const [otpSent, setOtpSent] = useState(false);
     const [tracking, setTracking] = useState(null);
     const [trackingLoading, setTrackingLoading] = useState(false);
 
@@ -72,33 +68,6 @@ const Checkout = () => {
         }
     }, [orderId, navigate]);
 
-    const handleCashOnDelivery = async () => {
-        setChosenMethod("cod");
-        setPaymentStep("cod");
-
-        try {
-            const response = await api.post(`${serverUrl}/api/order/updateCashOnDelivery`, {
-                orderId: orderId,
-            });
-
-            const data = response.data;
-            if (data.success) {
-                toast.success(data.message || "Your Order has been Confirmed");
-                navigate(`/payment-success?order_id=${orderId}`);
-            } else {
-                setChosenMethod("");
-                setPaymentStep("selection");
-                console.error("handleCashOnDelivery error--->", data.message);
-                toast.error(data.message || "Failed to Cash On Delivery");
-            };
-        } catch (error) {
-            setChosenMethod("");
-            setPaymentStep("selection");
-            console.error("Failed to Cash On Delivery:", error);
-            toast.error("Failed to Cash On Delivery");
-        };
-    };
-
     const handleOrderCancel = async () => {
         try {
             setCancelOrderLoading(true);
@@ -127,49 +96,6 @@ const Checkout = () => {
             };
         } finally {
             setCancelOrderLoading(false);
-        };
-    };
-
-    const handleOTPSend = async () => {
-        try {
-            const response = await api.post(`${serverUrl}/api/order/send-otp`, {
-                orderId: orderId,
-                phone: order.address.phone,
-            });
-
-            const data = response.data;
-            if (data.success) {
-                toast.success(data.message);
-                setOtpModal(true);
-                setOtpSent(true);
-            } else {
-                console.error("handleOTPSend error--->", data.message);
-                toast.error(data.message || "Failed to send OTP");
-            };
-        } catch (error) {
-            console.error("Error handle OTP Send:", error);
-            toast.error("Error sending OTP");
-        };
-    };
-
-    const handleVerifyOTP = async () => {
-        try {
-            const response = await api.post(`${serverUrl}/api/order/verify-otp`, {
-                orderId: orderId,
-                otp: otp,
-            });
-
-            const data = response.data;
-            if (data.success) {
-                toast.success("OTP verified! COD Order Confirmed");
-                navigate(`/payment-success?order_id=${orderId}`);
-            } else {
-                console.error("handleVerifyOTP error--->", data.message);
-                toast.error(data.message || "OTP verification failed");
-            };
-        } catch (error) {
-            console.error("Error handle Verify OTP---------->", error);
-            toast.error("OTP verification failed");
         };
     };
 
@@ -580,14 +506,6 @@ const Checkout = () => {
                                                 <FaCreditCard className="w-5 h-5" />
                                                 Pay Online <span className="font-bold">({order.onlinePaydisPercentage}% Off)</span>
                                             </button>
-
-                                            <button
-                                                onClick={handleCashOnDelivery}
-                                                className="w-full flex items-center justify-center gap-3 bg-gray-100 text-gray-900 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                                            >
-                                                <FaMoneyBillWave className="w-5 h-5" />
-                                                Cash on Delivery
-                                            </button>
                                         </>
                                     )}
 
@@ -614,43 +532,9 @@ const Checkout = () => {
                                             />
                                         </div>
                                     )}
-
-                                    {paymentStep === "cod" && (
-                                        <div className="space-y-4">
-                                            {/* <button
-                                                onClick={handleOTPSend}
-                                                className="w-full bg-green-600 text-white py-3 rounded-lg"
-                                            >
-                                                Send OTP
-                                            </button>
-
-                                            <button
-                                                onClick={() => setPaymentStep("selection")}
-                                                className="w-full bg-gray-200 py-3 rounded-lg"
-                                            >
-                                                Back
-                                            </button> */}
-                                        </div>
-                                    )}
                                 </div>
                             )}
 
-
-                            {order.paymentStatus === "pending" && order.status !== "cancelled" && order.paymentMethod === "cod" && (
-                                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                                    <div className="flex items-center gap-3">
-                                        <FaMoneyBillWave className="w-6 h-6 text-green-600" />
-                                        <div>
-                                            <h4 className="font-semibold text-green-800">
-                                                Cash on Delivery
-                                            </h4>
-                                            <p className="text-sm text-green-700">
-                                                Pay when your order is delivered
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
                             {order.paymentStatus === "paid" && order.status !== "cancelled" && (
                                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -676,36 +560,6 @@ const Checkout = () => {
                                                 Your order has been cancelled.
                                             </h4>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {otpModal && (
-                                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                                    <div className="bg-white p-6 rounded-lg shadow-lg w-80">
-                                        <h2 className="text-lg font-semibold mb-3">Verify OTP</h2>
-
-                                        <input
-                                            type="text"
-                                            value={otp}
-                                            onChange={(e) => setOtp(e.target.value)}
-                                            placeholder="Please Enter OTP"
-                                            className="w-full border p-2 rounded-lg mb-4"
-                                        />
-
-                                        <button
-                                            onClick={handleVerifyOTP}
-                                            className="w-full bg-green-600 text-white py-2 rounded-lg mb-2"
-                                        >
-                                            Verify OTP
-                                        </button>
-
-                                        <button
-                                            onClick={() => setOtpModal(false)}
-                                            className="w-full bg-gray-200 py-2 rounded-lg"
-                                        >
-                                            Cancel
-                                        </button>
                                     </div>
                                 </div>
                             )}

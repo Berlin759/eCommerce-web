@@ -1,14 +1,15 @@
 import { Router } from "express";
 import {
     addRating,
+    addAdminReview,
     listRatings,
     listByAdminRatings,
     removeRating,
     singleRating,
     updateRating,
 } from "../controllers/ratingController.mjs";
-import adminAuth from "../middleware/adminAuth.js";
 import userAuth from "../middleware/userAuth.js";
+import adminAuth from "../middleware/adminAuth.js";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.put(`${routeValue}update/:id`, adminAuth, updateRating);
 router.get(`${routeValue}single`, singleRating);
 router.get(`${routeValue}list`, listRatings);
 router.get(`${routeValue}admin/list`, adminAuth, listByAdminRatings);
+router.post(`${routeValue}admin/add`, adminAuth, addAdminReview);
 
 export default router;

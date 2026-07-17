@@ -18,6 +18,7 @@ import Categories from "./pages/Categories";
 import Brands from "./pages/Brands";
 import Contacts from "./pages/Contacts";
 import Ratings from "./pages/Ratings";
+import AddReview from "./pages/AddReview";
 import Invoice from "./pages/Invoice";
 import ApiDocumentation from "./pages/ApiDocumentation";
 import LoginPage from "./pages/LoginPage";
@@ -79,6 +80,7 @@ function App() {
                                                     <Route path="/videos" element={<Videos token={token} />} />
                                                     <Route path="/users" element={<Users token={token} />} />
                                                     <Route path="/settings" element={<Settings token={token} />} />
+                                            <Route path="/add-review" element={<AddReview token={token} />} />
                                                 </>
                                             )}
                                             <Route path="/inventory" element={<Inventory />} />

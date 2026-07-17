@@ -399,7 +399,7 @@ const SingleProduct = () => {
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-3 mb-2">
                                                             <h4 className="font-medium text-gray-900">
-                                                                {review.userId.name}
+                                                                {review.displayName || review.userId?.name || "Anonymous"}
                                                             </h4>
                                                             <div className="flex items-center">
                                                                 {Array.from({ length: 5 }).map(

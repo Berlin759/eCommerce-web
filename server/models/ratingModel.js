@@ -4,17 +4,21 @@ const ratingSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "user",
-        required: true,
+        default: null,
     },
     orderId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "order",
-        required: true,
+        default: null,
     },
     productId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "product",
         required: true,
+    },
+    reviewerName: {
+        type: String,
+        default: "",
     },
     rating: {
         type: Number,

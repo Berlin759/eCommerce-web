@@ -120,6 +120,7 @@ const Ratings = () => {
         .filter((item) => {
             const matchesSearch =
                 item._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.userId?.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -288,7 +289,7 @@ const Ratings = () => {
                                             </div>
                                             <div className="ml-3">
                                                 <div className="text-sm font-medium text-gray-900">
-                                                    {rating.userId?.name || "N/A"}
+                                                    {rating.displayName || rating.userId?.name || "N/A"}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
                                                     {rating.userId?.email || "N/A"}
@@ -382,7 +383,7 @@ const Ratings = () => {
                                             #{rating._id.slice(-8).toUpperCase()}
                                         </div>
                                         <div className="text-xs text-gray-500">
-                                            {rating.userId?.name || "N/A"}
+                                            {rating.displayName || rating.userId?.name || "N/A"}
                                         </div>
                                     </div>
                                 </div>

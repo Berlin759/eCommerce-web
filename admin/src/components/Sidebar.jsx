@@ -17,6 +17,7 @@ import {
     FaEnvelope,
     FaStar,
     FaVideo,
+    FaPenFancy,
 } from "react-icons/fa";
 import { MdDashboard, MdAnalytics, MdInventory } from "react-icons/md";
 import { BiPackage } from "react-icons/bi";
@@ -134,6 +135,13 @@ const Sidebar = () => {
             icon: <FaStar />,
             path: "/ratings",
             description: "Customer ratings & feedback",
+            badge: null,
+        },
+        {
+            title: "Add Review",
+            icon: <FaPenFancy />,
+            path: "/add-review",
+            description: "Manually create product reviews",
             badge: null,
         },
         // {

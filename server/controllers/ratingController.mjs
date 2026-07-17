@@ -83,10 +83,20 @@ const listRatings = async (req, res) => {
 
         let dbRatings = await ratingModel.find(filter).populate("userId", "name email avatar").sort({ createdAt: -1 });
 
+        const formattedRatings = dbRatings.map((r) => {
+            const obj = r.toObject();
+            if (!obj.userId && obj.reviewerName) {
+                obj.displayName = obj.reviewerName;
+            } else if (obj.userId) {
+                obj.displayName = obj.userId.name;
+            }
+            return obj;
+        });
+
         return res.status(200).json({
             success: true,
-            ratings: dbRatings,
-            total: dbRatings.length,
+            ratings: formattedRatings,
+            total: formattedRatings.length,
         });
     } catch (error) {
         console.error("List Ratings error:", error);
@@ -255,8 +265,60 @@ const updateRating = async (req, res) => {
     };
 };
 
+const addAdminReview = async (req, res) => {
+    try {
+        const { productId, reviewerName, rating, description } = req.body;
+
+        if (!productId) {
+            return res.status(400).json({
+                success: false,
+                message: "Product is required!",
+            });
+        };
+
+        if (!reviewerName || reviewerName.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "Reviewer name is required!",
+            });
+        };
+
+        if (!rating) {
+            return res.status(400).json({
+                success: false,
+                message: "Please select a star rating!",
+            });
+        };
+
+        const ratingPayload = {
+            productId: new ObjectId(productId),
+            reviewerName: reviewerName.trim(),
+            rating: rating,
+            description: description || "",
+        };
+
+        const createRating = await ratingModel.create(ratingPayload);
+
+        if (!createRating) {
+            return res.status(400).json({
+                success: false,
+                message: "Something went wrong, please try again later.",
+            });
+        };
+
+        return res.status(200).json({
+            success: true,
+            message: "Review added successfully",
+        });
+    } catch (error) {
+        console.error("addAdminReview Error------------>", error);
+        return res.status(400).json({ success: false, message: error.message });
+    }
+};
+
 export {
     addRating,
+    addAdminReview,
     listRatings,
     listByAdminRatings,
     removeRating,
