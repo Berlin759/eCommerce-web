@@ -289,7 +289,7 @@ const Ratings = () => {
                                             </div>
                                             <div className="ml-3">
                                                 <div className="text-sm font-medium text-gray-900">
-                                                    {rating.displayName || rating.userId?.name || "N/A"}
+                                                    {rating.reviewerName || rating.userId?.name || "N/A"}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
                                                     {rating.userId?.email || "N/A"}

@@ -3,21 +3,21 @@
 @tailwind utilities;
 
 .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 .max-w-screen-xl {
-    max-width: 1600px;
+  max-width: 1600px;
 }
 
 .max-modal-width {
-    width: 600px;
+  width: 600px;
 }
 
 .h-video {
-    height: 500px;
+  height: 500px;
 }
 
 .web-lab img {
-    height: 55px;
+  height: 55px;
 }

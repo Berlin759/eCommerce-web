@@ -226,22 +226,16 @@ const SingleProduct = () => {
                         </div>
 
                         {/* Rating */}
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center">
-                                {Array.from({ length: 5 }).map((_, index) => (
-                                    <MdStar
-                                        key={index}
-                                        className={`w-5 h-5 ${index < Math.floor(productInfo?.averageRating || 0)
-                                            ? "text-yellow-400"
-                                            : "text-gray-300"
-                                            }`}
-                                    />
-                                ))}
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 bg-green-600 text-white px-2.5 py-1 rounded-md">
+                                <span className="text-sm font-semibold">{productInfo?.averageRating?.toFixed(1) || "0.0"}</span>
+                                <MdStar className="w-3.5 h-3.5" />
+                                ({productInfo?.totalRatings || 0} Customer Review{productInfo?.totalRatings !== 1 ? "s" : ""})
                             </div>
+                            {/* <span className="text-gray-400 text-lg">|</span>
                             <span className="text-sm text-gray-600">
-                                Rated {productInfo?.averageRating?.toFixed(1) || "0.0"} out of 5 based
-                                on {productInfo?.totalRatings || 0} customer reviews
-                            </span>
+                                {productInfo?.totalRatings || 0} customer review{productInfo?.totalRatings !== 1 ? "s" : ""}
+                            </span> */}
                         </div>
 
                         {/* Description */}

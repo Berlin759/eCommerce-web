@@ -73,7 +73,7 @@ const addRating = async (req, res) => {
 
 const listRatings = async (req, res) => {
     try {
-        const { productId } = req.query;
+        const { productId, limit } = req.query;
 
         let filter = {};
 
@@ -81,7 +81,13 @@ const listRatings = async (req, res) => {
             filter.productId = new ObjectId(productId);
         };
 
-        let dbRatings = await ratingModel.find(filter).populate("userId", "name email avatar").sort({ createdAt: -1 });
+        let query = ratingModel.find(filter).populate("userId", "name email avatar").populate("productId", "name").sort({ rating: -1 });
+
+        if (limit) {
+            query = query.limit(parseInt(limit));
+        };
+
+        let dbRatings = await query;
 
         const formattedRatings = dbRatings.map((r) => {
             const obj = r.toObject();
