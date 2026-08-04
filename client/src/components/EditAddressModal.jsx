@@ -57,14 +57,7 @@ const EditAddressModal = ({ address, onClose, onSuccess }) => {
                         placeholder="Label (Home, Work)"
                         value={form.label}
                         onChange={handleChange}
-                        className="p-3 border rounded-lg"
-                    />
-                    <input
-                        name="phone"
-                        placeholder="Phone"
-                        value={form.phone}
-                        onChange={handleChange}
-                        className="p-3 border rounded-lg"
+                        className="col-span-1 md:col-span-2 p-3 border rounded-lg"
                     />
                     <input
                         name="street"

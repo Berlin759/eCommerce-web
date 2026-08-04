@@ -2,9 +2,11 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
     {
-        name: { type: String, required: true },
-        email: { type: String, required: true, unique: true },
-        password: { type: String, required: true },
+        name: { type: String, default: "User" },
+        email: { type: String, default: "" },
+        password: { type: String, default: "" },
+        phone: { type: String, unique: true, sparse: true },
+        countryCode: { type: String, default: "+91" },
         role: {
             type: String,
             enum: ["admin", "user"],
@@ -22,12 +24,12 @@ const userSchema = new mongoose.Schema(
         ],
         addresses: [
             {
-                label: { type: String, required: true }, // e.g., 'Home', 'Work', 'Billing'
-                street: { type: String, required: true },
-                city: { type: String, required: true },
-                state: { type: String, required: true },
-                zipCode: { type: String, required: true },
-                country: { type: String, required: true },
+                label: { type: String, default: "Home" },
+                street: { type: String, default: "" },
+                city: { type: String, default: "" },
+                state: { type: String, default: "" },
+                zipCode: { type: String, default: "" },
+                country: { type: String, default: "" },
                 phone: { type: String, default: "" },
                 isDefault: { type: Boolean, default: false },
                 _id: { type: mongoose.Schema.Types.ObjectId, auto: true },

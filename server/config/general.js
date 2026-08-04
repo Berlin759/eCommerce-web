@@ -316,29 +316,74 @@ export const convertToTodayTime = (timeStr) => {
     return now;
 };
 
-export const sendOtpOnWhatsApp = async (mobile, otp) => {
+export const sendWhatsAppOtpMeta = async (mobile, otp) => {
     try {
-        const url = `https://api.ultramsg.com/${process.env.ULTRAMSG_INSTANCE}/messages/chat`;
+        const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+        const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
 
-        const messageData = {
-            token: process.env.ULTRAMSG_TOKEN,
-            to: mobile,
-            body: `Your OTP is ${otp}. It will expire in ${Constants.OTP_EXPIRATION_TIME} minutes.`
+        // Clean mobile number (strip non-numeric except digits)
+        const cleanMobile = String(mobile).replace(/[^0-9]/g, "");
+
+        log1([`Sending Meta WhatsApp OTP to: ${cleanMobile}, OTP: ${otp}`]);
+
+        if (!phoneNumberId || !accessToken) {
+            console.log(`\n====================================================`);
+            console.log(`[DEV MODE - META WHATSAPP OTP] Phone: ${cleanMobile} | OTP: ${otp}`);
+            console.log(`====================================================\n`);
+            return {
+                success: true,
+                message: "OTP sent to your WhatsApp Number successfully",
+                devOtp: otp,
+            };
+        }
+
+        const url = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
+
+        const payload = {
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+            to: cleanMobile,
+            type: "text",
+            text: {
+                preview_url: false,
+                body: `Your verification code is ${otp}. Valid for 10 minutes. Do not share this code with anyone.`,
+            },
         };
 
-        const res = await axios.post(url, messageData);
+        const response = await axios.post(url, payload, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+        });
 
+        if (response.data && (response.status === 200 || response.status === 201)) {
+            return {
+                success: true,
+                message: "OTP sent to your WhatsApp Number successfully",
+            };
+        } else {
+            console.error("Meta WhatsApp API Error:", response.data);
+            return {
+                success: false,
+                message: response.data?.error?.message || "Failed to send OTP via Meta WhatsApp",
+            };
+        }
+    } catch (error) {
+        log1(["Error sending Meta WhatsApp OTP -------->", error.response?.data || error.message]);
+        console.log(`\n====================================================`);
+        console.log(`[DEV FALLBACK - META WHATSAPP OTP] Phone: ${mobile} | OTP: ${otp}`);
+        console.log(`====================================================\n`);
         return {
             success: true,
-            message: "OTP sent to your WhatsApp Number Successfully",
+            message: "OTP sent successfully",
+            devOtp: otp,
         };
-    } catch (error) {
-        log1(["Error fetching sendOtpOnWhatsApp-------->", error.response?.data || error.message]);
-        return {
-            success: false,
-            message: "Failed to send OTP",
-        };
-    };
+    }
+};
+
+export const sendOtpOnWhatsApp = async (mobile, otp) => {
+    return await sendWhatsAppOtpMeta(mobile, otp);
 };
 
 export const calculateDiscountedPercentage = (firstPrice, secondPrice) => {

@@ -1,19 +1,13 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Dialog, DialogPanel } from "@headlessui/react";
 import { motion, AnimatePresence } from "framer-motion";
+import { IoCloseOutline } from "react-icons/io5";
+import { FaPhoneAlt, FaShieldAlt, FaArrowRight, FaEdit, FaCheckCircle } from "react-icons/fa";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { serverUrl } from "../../config";
 import { useDispatch } from "react-redux";
 import { addUser, setOrderCount } from "../redux/orebiSlice";
-import {
-    FaPhoneAlt,
-    FaShieldAlt,
-    FaArrowRight,
-    FaCheckCircle,
-    FaEdit,
-} from "react-icons/fa";
-import Container from "../components/Container";
+import { serverUrl } from "../../config";
 import api from "../api/axiosInstance";
 
 const COUNTRY_CODES = [
@@ -27,100 +21,46 @@ const COUNTRY_CODES = [
     { code: "+965", country: "Kuwait", flag: "🇰🇼", length: 8 },
 ];
 
-const SignIn = () => {
+const LoginModal = ({ isOpen, onClose }) => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
 
-    // ================= Phone OTP State =================
     const [countryCode, setCountryCode] = useState("+91");
     const [phone, setPhone] = useState("");
     const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-    const [step, setStep] = useState(1); // 1: Phone, 2: OTP
+    const [step, setStep] = useState(1); // 1: Phone input, 2: OTP verification
     const [isLoading, setIsLoading] = useState(false);
     const [errMessage, setErrMessage] = useState("");
     const [timer, setTimer] = useState(0);
 
     const selectedCountry = COUNTRY_CODES.find((c) => c.code === countryCode) || COUNTRY_CODES[0];
 
-    /* ============= PRESERVED EMAIL/PASSWORD CODE (COMMITTED OUT) =============
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [errEmail, setErrEmail] = useState("");
-    const [errPassword, setErrPassword] = useState("");
-
-    const handleEmail = (e) => {
-        setEmail(e.target.value);
-        setErrEmail("");
-    };
-
-    const handlePassword = (e) => {
-        setPassword(e.target.value);
-        setErrPassword("");
-    };
-
-    const handleSignInEmailPassword = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setErrEmail("");
-        setErrPassword("");
-
-        if (!email) {
-            setErrEmail("Enter your email");
-            setIsLoading(false);
-            return;
-        }
-
-        if (!password) {
-            setErrPassword("Enter your password");
-            setIsLoading(false);
-            return;
-        }
-
-        try {
-            const response = await axios.post(serverUrl + "/api/user/login", {
-                email,
-                password,
-            });
-            const data = response?.data;
-            if (data?.success) {
-                localStorage.setItem("token", data?.token);
-                await fetchUserOrderCount();
-                toast.success(data?.message);
-                navigate("/");
-            } else {
-                toast.error(data?.message);
-            }
-        } catch (error) {
-            console.error("User login error", error);
-            toast.error(error?.response?.data?.message || "Login failed");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    ======================================================================== */
-
+    // Reset form state on modal close or open
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (token) {
-            navigate("/");
+        if (!isOpen) {
+            setStep(1);
+            setPhone("");
+            setOtp(["", "", "", "", "", ""]);
+            setErrMessage("");
+            setTimer(0);
         }
-    }, [navigate]);
+    }, [isOpen]);
 
-    // Timer for OTP resend
+    // Timer countdown for OTP resend
     useEffect(() => {
         let interval = null;
         if (timer > 0) {
-            interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+            interval = setInterval(() => {
+                setTimer((prev) => prev - 1);
+            }, 1000);
         } else {
             clearInterval(interval);
         }
         return () => clearInterval(interval);
     }, [timer]);
 
-    // Handle Phone Input (Only numeric characters allowed)
+    // Numeric-only phone handler with max length check
     const handlePhoneChange = (e) => {
-        const val = e.target.value.replace(/[^0-9]/g, "");
+        const val = e.target.value.replace(/[^0-9]/g, ""); // Allow ONLY numbers
         if (val.length <= selectedCountry.length) {
             setPhone(val);
             setErrMessage("");
@@ -136,7 +76,7 @@ const SignIn = () => {
 
     const isPhoneValid = phone.length === selectedCountry.length;
 
-    // OTP Change handler
+    // OTP Input handler
     const handleOtpChange = (element, index) => {
         const value = element.value.replace(/[^0-9]/g, "");
         if (!value && element.value !== "") return;
@@ -146,6 +86,7 @@ const SignIn = () => {
         setOtp(newOtp);
         setErrMessage("");
 
+        // Auto focus next input
         if (value && element.nextSibling) {
             element.nextSibling.focus();
         }
@@ -157,31 +98,30 @@ const SignIn = () => {
         }
     };
 
-    // Fetch user order count
+    // Fetch user order count after successful login
     const fetchUserOrderCount = async () => {
         try {
             const response = await api.get(`${serverUrl}/api/order/my-orders`);
-            const data = response.data;
-            if (data.success) {
-                dispatch(setOrderCount(data.orders.length));
+            if (response.data?.success) {
+                dispatch(setOrderCount(response.data.orders.length));
             }
         } catch (error) {
             console.error("Error fetching order count:", error);
         }
     };
 
-    // Send WhatsApp OTP
+    // Step 1: Send WhatsApp OTP
     const handleSendOtp = async (e) => {
         if (e) e.preventDefault();
         setErrMessage("");
 
         if (!phone) {
-            setErrMessage("Please enter your mobile number");
+            setErrMessage("Please enter your phone number");
             return;
         }
 
         if (phone.length !== selectedCountry.length) {
-            setErrMessage(`Mobile number must be exactly ${selectedCountry.length} digits`);
+            setErrMessage(`Phone number for ${selectedCountry.country} must be ${selectedCountry.length} digits`);
             return;
         }
 
@@ -199,14 +139,14 @@ const SignIn = () => {
                     toast(`[Dev OTP]: ${response.data.devOtp}`, { icon: "🔑", duration: 6000 });
                 }
                 setStep(2);
-                setTimer(60);
+                setTimer(60); // 60s resend timer
             } else {
                 setErrMessage(response.data?.message || "Failed to send OTP");
                 toast.error(response.data?.message || "Failed to send OTP");
             }
         } catch (error) {
             console.error("Send OTP Error:", error);
-            const msg = error.response?.data?.message || "Failed to send OTP";
+            const msg = error.response?.data?.message || "Failed to send OTP. Please try again.";
             setErrMessage(msg);
             toast.error(msg);
         } finally {
@@ -214,7 +154,7 @@ const SignIn = () => {
         }
     };
 
-    // Verify OTP & Login
+    // Step 2: Verify OTP
     const handleVerifyOtp = async (e) => {
         if (e) e.preventDefault();
         setErrMessage("");
@@ -240,14 +180,14 @@ const SignIn = () => {
                 await fetchUserOrderCount();
 
                 toast.success(response.data.message || "Login successful!");
-                navigate("/");
+                onClose();
             } else {
                 setErrMessage(response.data?.message || "Invalid OTP");
                 toast.error(response.data?.message || "Invalid OTP");
             }
         } catch (error) {
             console.error("Verify OTP Error:", error);
-            const msg = error.response?.data?.message || "OTP verification failed";
+            const msg = error.response?.data?.message || "OTP verification failed. Please try again.";
             setErrMessage(msg);
             toast.error(msg);
         } finally {
@@ -256,49 +196,51 @@ const SignIn = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-            <Container>
-                <div className="sm:w-[450px] w-full mx-auto">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="bg-white rounded-2xl shadow-xl p-8"
-                    >
+        <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300" />
+
+            <div className="fixed inset-0 flex items-center justify-center p-4">
+                <DialogPanel className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden transform transition-all duration-300">
+                    <div className="relative p-6 sm:p-8">
+                        {/* Close button */}
+                        <button
+                            onClick={onClose}
+                            className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                        >
+                            <IoCloseOutline className="text-2xl" />
+                        </button>
+
                         <AnimatePresence mode="wait">
                             {step === 1 ? (
                                 <motion.div
-                                    key="signInStep1"
+                                    key="step1"
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: 20 }}
                                     transition={{ duration: 0.3 }}
                                 >
                                     {/* Header */}
-                                    <div className="text-center mb-8">
-                                        <motion.div
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: 1 }}
-                                            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                                            className="w-16 h-16 bg-emerald-500/10 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-100"
-                                        >
+                                    <div className="text-center mb-6">
+                                        <div className="w-16 h-16 bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-100">
                                             <FaPhoneAlt className="text-2xl" />
-                                        </motion.div>
-                                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                                            Welcome Back
-                                        </h1>
-                                        <p className="text-gray-600">
-                                            Enter your mobile number to sign in via WhatsApp OTP
+                                        </div>
+                                        <h2 className="text-2xl font-bold text-gray-900">
+                                            WhatsApp Login / Sign Up
+                                        </h2>
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            Enter your mobile number to receive verification code on WhatsApp
                                         </p>
                                     </div>
 
-                                    {/* Phone Form */}
-                                    <form onSubmit={handleSendOtp} className="space-y-6">
+                                    {/* Form */}
+                                    <form onSubmit={handleSendOtp} className="space-y-5">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-xs font-semibold uppercase text-gray-600 mb-2">
                                                 Mobile Number
                                             </label>
-                                            <div className="flex rounded-lg border border-gray-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 overflow-hidden transition-colors">
+                                            <div className="flex rounded-xl border border-gray-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 overflow-hidden transition-all bg-gray-50/50">
+                                                {/* Country Code Select */}
                                                 <select
                                                     value={countryCode}
                                                     onChange={handleCountryCodeChange}
@@ -311,18 +253,19 @@ const SignIn = () => {
                                                     ))}
                                                 </select>
 
+                                                {/* Number Input */}
                                                 <input
                                                     type="text"
                                                     inputMode="numeric"
                                                     value={phone}
                                                     onChange={handlePhoneChange}
-                                                    placeholder={`Enter ${selectedCountry.length}-digit number`}
+                                                    placeholder={`Enter ${selectedCountry.length}-digit mobile number`}
                                                     maxLength={selectedCountry.length}
                                                     className="w-full px-4 py-3 bg-transparent text-sm text-gray-900 font-medium placeholder-gray-400 focus:outline-none"
                                                 />
                                             </div>
                                             <p className="text-xs text-gray-400 mt-1">
-                                                Numbers only (max {selectedCountry.length} digits)
+                                                Allowed: {selectedCountry.length} digits only
                                             </p>
                                         </div>
 
@@ -330,20 +273,18 @@ const SignIn = () => {
                                             <motion.p
                                                 initial={{ opacity: 0, y: -5 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                className="text-sm text-red-600 font-medium"
+                                                className="text-sm text-red-600 font-medium flex items-center gap-1"
                                             >
-                                                ⚠️ {errMessage}
+                                                <span>⚠️</span> {errMessage}
                                             </motion.p>
                                         )}
 
-                                        <motion.button
-                                            whileHover={{ scale: isPhoneValid && !isLoading ? 1.02 : 1 }}
-                                            whileTap={{ scale: isPhoneValid && !isLoading ? 0.98 : 1 }}
+                                        <button
                                             type="submit"
                                             disabled={!isPhoneValid || isLoading}
-                                            className={`group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-medium rounded-lg transition-all duration-200 ${
+                                            className={`w-full py-3.5 px-4 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${
                                                 isPhoneValid && !isLoading
-                                                    ? "text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 shadow-md shadow-emerald-600/20 cursor-pointer"
+                                                    ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 cursor-pointer"
                                                     : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
                                             }`}
                                         >
@@ -353,31 +294,30 @@ const SignIn = () => {
                                                     Sending OTP...
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-2">
-                                                    Get WhatsApp OTP
-                                                    <FaArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                                </div>
+                                                <>
+                                                    Get WhatsApp OTP <FaArrowRight className="text-xs" />
+                                                </>
                                             )}
-                                        </motion.button>
+                                        </button>
                                     </form>
                                 </motion.div>
                             ) : (
                                 <motion.div
-                                    key="signInStep2"
+                                    key="step2"
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
                                     transition={{ duration: 0.3 }}
                                 >
                                     {/* Header */}
-                                    <div className="text-center mb-8">
-                                        <div className="w-16 h-16 bg-emerald-500/10 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-100">
+                                    <div className="text-center mb-6">
+                                        <div className="w-16 h-16 bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-100">
                                             <FaShieldAlt className="text-2xl" />
                                         </div>
-                                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                                            Enter OTP
-                                        </h1>
-                                        <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                                        <h2 className="text-2xl font-bold text-gray-900">
+                                            Verify OTP
+                                        </h2>
+                                        <div className="flex items-center justify-center gap-2 mt-1 text-sm text-gray-600">
                                             <span>Sent to <strong>{countryCode} {phone}</strong></span>
                                             <button
                                                 onClick={() => {
@@ -391,7 +331,7 @@ const SignIn = () => {
                                         </div>
                                     </div>
 
-                                    {/* OTP Form */}
+                                    {/* OTP Input Boxes */}
                                     <form onSubmit={handleVerifyOtp} className="space-y-6">
                                         <div className="flex justify-center gap-2 sm:gap-3">
                                             {otp.map((digit, index) => (
@@ -403,7 +343,7 @@ const SignIn = () => {
                                                     value={digit}
                                                     onChange={(e) => handleOtpChange(e.target, index)}
                                                     onKeyDown={(e) => handleOtpKeyDown(e, index)}
-                                                    className="w-11 h-12 text-center text-xl font-bold border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-lg focus:outline-none transition-all bg-gray-50"
+                                                    className="w-11 h-12 text-center text-xl font-bold border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl focus:outline-none transition-all bg-gray-50"
                                                 />
                                             ))}
                                         </div>
@@ -412,18 +352,16 @@ const SignIn = () => {
                                             <motion.p
                                                 initial={{ opacity: 0, y: -5 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                className="text-sm text-red-600 font-medium text-center"
+                                                className="text-sm text-red-600 font-medium text-center flex items-center justify-center gap-1"
                                             >
-                                                ⚠️ {errMessage}
+                                                <span>⚠️</span> {errMessage}
                                             </motion.p>
                                         )}
 
-                                        <motion.button
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
+                                        <button
                                             type="submit"
                                             disabled={isLoading}
-                                            className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md shadow-emerald-600/20"
+                                            className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {isLoading ? (
                                                 <div className="flex items-center gap-2">
@@ -431,12 +369,11 @@ const SignIn = () => {
                                                     Verifying...
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-2">
-                                                    Verify & Sign In
-                                                    <FaCheckCircle className="w-4 h-4" />
-                                                </div>
+                                                <>
+                                                    Verify & Login <FaCheckCircle className="text-sm" />
+                                                </>
                                             )}
-                                        </motion.button>
+                                        </button>
                                     </form>
 
                                     {/* Resend Timer */}
@@ -456,26 +393,11 @@ const SignIn = () => {
                                 </motion.div>
                             )}
                         </AnimatePresence>
-
-                        {/* PRESERVED EMAIL/PASSWORD FORM MARKUP (COMMITTED OUT) */}
-                        {/*
-                        <form onSubmit={handleSignInEmailPassword} className="space-y-6">
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                                <input id="email" type="email" value={email} onChange={handleEmail} placeholder="Enter your email" />
-                            </div>
-                            <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                                <input id="password" type={showPassword ? "text" : "password"} value={password} onChange={handlePassword} placeholder="Enter your password" />
-                            </div>
-                            <button type="submit">Sign In</button>
-                        </form>
-                        */}
-                    </motion.div>
-                </div>
-            </Container>
-        </div>
+                    </div>
+                </DialogPanel>
+            </div>
+        </Dialog>
     );
 };
 
-export default SignIn;
+export default LoginModal;

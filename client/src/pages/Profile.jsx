@@ -41,10 +41,11 @@ const Profile = () => {
     const [openChangePassword, setOpenChangePassword] = useState(false);
     const [activeTab, setActiveTab] = useState("profile");
 
-    // fetch latest profile
+    // fetch latest profile once on component mount
     useEffect(() => {
-        if (!userInfo) {
-            navigate("/signin");
+        const token = localStorage.getItem("token");
+        if (!token && !userInfo) {
+            navigate("/");
             return;
         }
 
@@ -63,7 +64,7 @@ const Profile = () => {
         };
 
         fetchUserProfile();
-    }, [userInfo, navigate, dispatch]);
+    }, [navigate, dispatch]);
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -198,8 +199,8 @@ const Profile = () => {
                                         <label className="text-sm text-gray-600">
                                             Phone
                                         </label>
-                                        <div className="mt-1 text-gray-800">
-                                            {userInfo.phone || "Not added"}
+                                        <div className="mt-1 text-gray-800 font-medium">
+                                            {userInfo.phone || (userInfo.addresses && userInfo.addresses[0] ? userInfo.addresses[0].phone : "") || "Not added"}
                                         </div>
                                     </div>
 

@@ -903,22 +903,6 @@ const Cart = () => {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Phone Number*
-                                </label>
-                                <input
-                                    type="tel"
-                                    value={addressForm.phone}
-                                    onChange={(e) =>
-                                        setAddressForm({ ...addressForm, phone: e.target.value })
-                                    }
-                                    placeholder="Enter your phone number"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    required
-                                />
-                            </div>
-
                             <div className="flex items-center">
                                 <input
                                     type="checkbox"

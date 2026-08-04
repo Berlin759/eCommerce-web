@@ -13,6 +13,7 @@ import { logo } from "../assets/images";
 import SearchInput from "./SearchInput";
 import Title from "./ui/title";
 import SocialLinks from "./SocialLinks";
+import LoginModal from "./LoginModal";
 
 export const headerNavigation = [
     // {
@@ -47,6 +48,7 @@ export const headerNavigation = [
 
 const Header = () => {
     let [isOpen, setIsOpen] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [categories, setCategories] = useState([]);
     const location = useLocation();
     const { products, userInfo, orderCount } = useSelector((state) => state.orebiReducer);
@@ -197,12 +199,14 @@ const Header = () => {
                             </div>
                         </Link>
                     ) : (
-                        <Link
-                            to={"/signin"}
-                            className="text-xl text-gray-700 hover:text-black relative transition-colors duration-300 p-2"
+                        <button
+                            type="button"
+                            onClick={() => setIsLoginModalOpen(true)}
+                            aria-label="Login"
+                            className="text-xl text-gray-700 hover:text-black relative transition-colors duration-300 p-2 cursor-pointer"
                         >
                             <FaUserAlt />
-                        </Link>
+                        </button>
                     )}
                 </div>
 
@@ -323,17 +327,20 @@ const Header = () => {
                                                 <span>Profile ({userInfo?.name})</span>
                                             </div>
                                         </Link>
-                                    ) : (
-                                        <Link
-                                            to={"/signin"}
-                                            onClick={() => setIsOpen(false)}
-                                            className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-black transition-all duration-200 transform hover:translate-x-1"
+                                     ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsOpen(false);
+                                                setIsLoginModalOpen(true);
+                                            }}
+                                            className="w-full text-left block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-black transition-all duration-200 transform hover:translate-x-1 cursor-pointer"
                                         >
                                             <div className="flex items-center gap-3">
                                                 <div className="w-2 h-2 rounded-full bg-gray-300" />
-                                                Sign In
+                                                Sign In / Sign Up
                                             </div>
-                                        </Link>
+                                        </button>
                                     )}
                                 </div>
 
@@ -345,6 +352,12 @@ const Header = () => {
                     </div>
                 </Dialog>
             </Container>
+
+            {/* Phone Login Modal */}
+            <LoginModal
+                isOpen={isLoginModalOpen}
+                onClose={() => setIsLoginModalOpen(false)}
+            />
         </div>
     );
 };

@@ -1,22 +1,34 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
-import { serverUrl } from "../../../admin/config";
 import axios from "axios";
+import { serverUrl } from "../../config";
+import { useDispatch } from "react-redux";
+import { addUser, setOrderCount } from "../redux/orebiSlice";
 import {
-    FaUser,
-    FaEnvelope,
-    FaLock,
-    FaEye,
-    FaEyeSlash,
-    FaUserPlus,
+    FaPhoneAlt,
+    FaShieldAlt,
     FaArrowRight,
     FaCheckCircle,
+    FaEdit,
 } from "react-icons/fa";
 import Container from "../components/Container";
+import api from "../api/axiosInstance";
+
+const COUNTRY_CODES = [
+    { code: "+91", country: "India", flag: "🇮🇳", length: 10 },
+    { code: "+1", country: "US / Canada", flag: "🇺🇸", length: 10 },
+    { code: "+44", country: "UK", flag: "🇬🇧", length: 10 },
+    { code: "+971", country: "UAE", flag: "🇦🇪", length: 9 },
+    { code: "+966", country: "Saudi Arabia", flag: "🇸🇦", length: 9 },
+    { code: "+61", country: "Australia", flag: "🇦🇺", length: 9 },
+    { code: "+974", country: "Qatar", flag: "🇶🇦", length: 8 },
+    { code: "+965", country: "Kuwait", flag: "🇰🇼", length: 8 },
+];
 
 const SignUp = () => {
+    const dispatch = useDispatch();
     const navigate = useNavigate();
 
     const token = localStorage.getItem("token");
@@ -26,21 +38,28 @@ const SignUp = () => {
         }
     }, [token, navigate]);
 
-    // ============= Initial State Start here =============
+    // ================= Phone OTP State =================
+    const [countryCode, setCountryCode] = useState("+91");
+    const [phone, setPhone] = useState("");
+    const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+    const [step, setStep] = useState(1);
+    const [checked, setChecked] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errMessage, setErrMessage] = useState("");
+    const [timer, setTimer] = useState(0);
+
+    const selectedCountry = COUNTRY_CODES.find((c) => c.code === countryCode) || COUNTRY_CODES[0];
+
+    /* ============= PRESERVED EMAIL/PASSWORD CODE (COMMITTED OUT) =============
     const [clientName, setClientName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [checked, setChecked] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const role = "user"; // Fixed role as user, not editable
-
-    // ============= Error Messages =================
     const [errClientName, setErrClientName] = useState("");
     const [errEmail, setErrEmail] = useState("");
     const [errPassword, setErrPassword] = useState("");
+    const role = "user";
 
-    // ============= Event Handlers =============
     const handleName = (e) => {
         setClientName(e.target.value);
         setErrClientName("");
@@ -56,51 +75,36 @@ const SignUp = () => {
         setErrPassword("");
     };
 
-    // ================= Email Validation =============
     const EmailValidation = (email) => {
         return String(email)
             .toLowerCase()
             .match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i);
     };
 
-    const handleSignUp = async (e) => {
+    const handleSignUpEmailPassword = async (e) => {
         e.preventDefault();
-
         if (!checked) {
             toast.error("Please accept the terms and conditions");
             return;
         }
-
         setIsLoading(true);
-
-        // Reset errors
         setErrClientName("");
         setErrEmail("");
         setErrPassword("");
 
         let hasError = false;
-
         if (!clientName) {
             setErrClientName("Enter your full name");
             hasError = true;
         }
-
-        if (!email) {
-            setErrEmail("Enter your email");
-            hasError = true;
-        } else if (!EmailValidation(email)) {
+        if (!email || !EmailValidation(email)) {
             setErrEmail("Enter a valid email address");
             hasError = true;
         }
-
-        if (!password) {
-            setErrPassword("Create a password");
-            hasError = true;
-        } else if (password.length < 6) {
+        if (!password || password.length < 6) {
             setErrPassword("Password must be at least 6 characters");
             hasError = true;
         }
-
         if (hasError) {
             setIsLoading(false);
             return;
@@ -111,7 +115,7 @@ const SignUp = () => {
                 name: clientName,
                 email,
                 password,
-                role, // Always "user"
+                role,
             });
             const data = response?.data;
             if (data?.success) {
@@ -127,6 +131,157 @@ const SignUp = () => {
             setIsLoading(false);
         }
     };
+    ======================================================================== */
+
+    // Timer countdown
+    useEffect(() => {
+        let interval = null;
+        if (timer > 0) {
+            interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+        } else {
+            clearInterval(interval);
+        }
+        return () => clearInterval(interval);
+    }, [timer]);
+
+    const handlePhoneChange = (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, ""); // Accept numeric digits only
+        if (val.length <= selectedCountry.length) {
+            setPhone(val);
+            setErrMessage("");
+        }
+    };
+
+    const handleCountryCodeChange = (e) => {
+        const newCode = e.target.value;
+        setCountryCode(newCode);
+        setPhone(""); // Automatically clear input field on country code change
+        setErrMessage("");
+    };
+
+    const isPhoneValid = phone.length === selectedCountry.length;
+
+    const handleOtpChange = (element, index) => {
+        const value = element.value.replace(/[^0-9]/g, "");
+        if (!value && element.value !== "") return;
+
+        const newOtp = [...otp];
+        newOtp[index] = value;
+        setOtp(newOtp);
+        setErrMessage("");
+
+        if (value && element.nextSibling) {
+            element.nextSibling.focus();
+        }
+    };
+
+    const handleOtpKeyDown = (e, index) => {
+        if (e.key === "Backspace" && !otp[index] && e.target.previousSibling) {
+            e.target.previousSibling.focus();
+        }
+    };
+
+    const fetchUserOrderCount = async () => {
+        try {
+            const response = await api.get(`${serverUrl}/api/order/my-orders`);
+            const data = response.data;
+            if (data.success) {
+                dispatch(setOrderCount(data.orders.length));
+            }
+        } catch (error) {
+            console.error("Error fetching order count:", error);
+        }
+    };
+
+    // Step 1: Send OTP
+    const handleSendOtp = async (e) => {
+        if (e) e.preventDefault();
+        setErrMessage("");
+
+        if (!phone) {
+            setErrMessage("Please enter your mobile number");
+            return;
+        }
+
+        if (phone.length !== selectedCountry.length) {
+            setErrMessage(`Mobile number must be exactly ${selectedCountry.length} digits`);
+            return;
+        }
+
+        if (!checked) {
+            toast.error("Please accept the terms and conditions");
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            const response = await axios.post(`${serverUrl}/api/user/send-otp`, {
+                phone,
+                countryCode,
+            });
+
+            if (response.data?.success) {
+                toast.success(response.data.message || "OTP sent to your WhatsApp number!");
+                if (response.data?.devOtp) {
+                    toast(`[Dev OTP]: ${response.data.devOtp}`, { icon: "🔑", duration: 6000 });
+                }
+                setStep(2);
+                setTimer(60);
+            } else {
+                setErrMessage(response.data?.message || "Failed to send OTP");
+                toast.error(response.data?.message || "Failed to send OTP");
+            }
+        } catch (error) {
+            console.error("Send OTP Error:", error);
+            const msg = error.response?.data?.message || "Failed to send OTP";
+            setErrMessage(msg);
+            toast.error(msg);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Step 2: Verify OTP
+    const handleVerifyOtp = async (e) => {
+        if (e) e.preventDefault();
+        setErrMessage("");
+
+        const otpString = otp.join("");
+        if (otpString.length !== 6) {
+            setErrMessage("Please enter complete 6-digit OTP");
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            const response = await axios.post(`${serverUrl}/api/user/verify-otp`, {
+                phone,
+                countryCode,
+                otp: otpString,
+            });
+
+            if (response.data?.success) {
+                localStorage.setItem("token", response.data.token);
+                dispatch(addUser(response.data.user));
+                await fetchUserOrderCount();
+
+                toast.success(response.data.message || "Account verified & logged in successfully!");
+                navigate("/");
+            } else {
+                setErrMessage(response.data?.message || "Invalid OTP");
+                toast.error(response.data?.message || "Invalid OTP");
+            }
+        } catch (error) {
+            console.error("Verify OTP Error:", error);
+            const msg = error.response?.data?.message || "OTP verification failed";
+            setErrMessage(msg);
+            toast.error(msg);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -138,249 +293,236 @@ const SignUp = () => {
                         transition={{ duration: 0.6 }}
                         className="bg-white rounded-2xl shadow-xl p-8"
                     >
-                        {/* Header */}
-                        <div className="text-center mb-8">
-                            <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                                className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4"
-                            >
-                                <FaUserPlus className="text-2xl text-white" />
-                            </motion.div>
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                                Create Account
-                            </h1>
-                            <p className="text-gray-600">
-                                Join ECommerce Shopping and start your journey
-                            </p>
-                        </div>
-
-                        {/* Form */}
-                        <form onSubmit={handleSignUp} className="space-y-6">
-                            {/* Full Name Field */}
-                            <div>
-                                <label
-                                    htmlFor="clientName"
-                                    className="block text-sm font-medium text-gray-700 mb-2"
+                        <AnimatePresence mode="wait">
+                            {step === 1 ? (
+                                <motion.div
+                                    key="signUpStep1"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    transition={{ duration: 0.3 }}
                                 >
-                                    Full Name
-                                </label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <FaUser className="h-5 w-5 text-gray-400" />
+                                    {/* Header */}
+                                    <div className="text-center mb-8">
+                                        <div className="w-16 h-16 bg-emerald-500/10 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-100">
+                                            <FaPhoneAlt className="text-2xl" />
+                                        </div>
+                                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                                            Create Account
+                                        </h1>
+                                        <p className="text-gray-600">
+                                            Sign up using your WhatsApp mobile number
+                                        </p>
                                     </div>
-                                    <input
-                                        id="clientName"
-                                        name="clientName"
-                                        type="text"
-                                        value={clientName}
-                                        onChange={handleName}
-                                        className={`block w-full pl-10 pr-3 py-3 border ${errClientName ? "border-red-300" : "border-gray-300"
-                                            } rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors`}
-                                        placeholder="Enter your full name"
-                                    />
-                                </div>
-                                {errClientName && (
-                                    <motion.p
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="mt-2 text-sm text-red-600 flex items-center gap-1"
-                                    >
-                                        <span className="font-bold">!</span>
-                                        {errClientName}
-                                    </motion.p>
-                                )}
-                            </div>
 
-                            {/* Email Field */}
-                            <div>
-                                <label
-                                    htmlFor="email"
-                                    className="block text-sm font-medium text-gray-700 mb-2"
-                                >
-                                    Email Address
-                                </label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <FaEnvelope className="h-5 w-5 text-gray-400" />
-                                    </div>
-                                    <input
-                                        id="email"
-                                        name="email"
-                                        type="email"
-                                        value={email}
-                                        onChange={handleEmail}
-                                        className={`block w-full pl-10 pr-3 py-3 border ${errEmail ? "border-red-300" : "border-gray-300"
-                                            } rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors`}
-                                        placeholder="Enter your email"
-                                    />
-                                </div>
-                                {errEmail && (
-                                    <motion.p
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="mt-2 text-sm text-red-600 flex items-center gap-1"
-                                    >
-                                        <span className="font-bold">!</span>
-                                        {errEmail}
-                                    </motion.p>
-                                )}
-                            </div>
+                                    {/* Form */}
+                                    <form onSubmit={handleSendOtp} className="space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Mobile Number
+                                            </label>
+                                            <div className="flex rounded-lg border border-gray-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 overflow-hidden transition-colors">
+                                                <select
+                                                    value={countryCode}
+                                                    onChange={handleCountryCodeChange}
+                                                    className="px-3 py-3 bg-gray-100 border-r border-gray-300 text-sm font-semibold text-gray-800 focus:outline-none cursor-pointer"
+                                                >
+                                                    {COUNTRY_CODES.map((c) => (
+                                                        <option key={c.code} value={c.code}>
+                                                            {c.flag} {c.code}
+                                                        </option>
+                                                    ))}
+                                                </select>
 
-                            {/* Password Field */}
-                            <div>
-                                <label
-                                    htmlFor="password"
-                                    className="block text-sm font-medium text-gray-700 mb-2"
-                                >
-                                    Password
-                                </label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <FaLock className="h-5 w-5 text-gray-400" />
-                                    </div>
-                                    <input
-                                        id="password"
-                                        name="password"
-                                        type={showPassword ? "text" : "password"}
-                                        value={password}
-                                        onChange={handlePassword}
-                                        className={`block w-full pl-10 pr-12 py-3 border ${errPassword ? "border-red-300" : "border-gray-300"
-                                            } rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors`}
-                                        placeholder="Create a strong password"
-                                    />
-                                    <button
-                                        type="button"
-                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                    >
-                                        {showPassword ? (
-                                            <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                                        ) : (
-                                            <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    value={phone}
+                                                    onChange={handlePhoneChange}
+                                                    placeholder={`Enter ${selectedCountry.length}-digit number`}
+                                                    maxLength={selectedCountry.length}
+                                                    className="w-full px-4 py-3 bg-transparent text-sm text-gray-900 font-medium placeholder-gray-400 focus:outline-none"
+                                                />
+                                            </div>
+                                            <p className="text-xs text-gray-400 mt-1">
+                                                Allowed: {selectedCountry.length} digits only
+                                            </p>
+                                        </div>
+
+                                        {/* Terms & Conditions */}
+                                        <div className="flex items-start space-x-3">
+                                            <div className="flex items-center h-5">
+                                                <input
+                                                    id="terms"
+                                                    name="terms"
+                                                    type="checkbox"
+                                                    checked={checked}
+                                                    onChange={() => setChecked(!checked)}
+                                                    className="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
+                                                />
+                                            </div>
+                                            <div className="text-sm">
+                                                <label htmlFor="terms" className="text-gray-700">
+                                                    I agree to the{" "}
+                                                    <span className="text-gray-900 font-medium underline cursor-pointer">
+                                                        Terms of Service
+                                                    </span>{" "}
+                                                    and{" "}
+                                                    <span className="text-gray-900 font-medium underline cursor-pointer">
+                                                        Privacy Policy
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {errMessage && (
+                                            <motion.p
+                                                initial={{ opacity: 0, y: -5 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="text-sm text-red-600 font-medium"
+                                            >
+                                                ⚠️ {errMessage}
+                                            </motion.p>
                                         )}
-                                    </button>
-                                </div>
-                                {errPassword && (
-                                    <motion.p
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="mt-2 text-sm text-red-600 flex items-center gap-1"
-                                    >
-                                        <span className="font-bold">!</span>
-                                        {errPassword}
-                                    </motion.p>
-                                )}
-                            </div>
 
-                            {/* Role Field (Read-only) */}
-                            <div>
-                                <label
-                                    htmlFor="role"
-                                    className="block text-sm font-medium text-gray-700 mb-2"
+                                        <motion.button
+                                            whileHover={{ scale: checked ? 1.02 : 1 }}
+                                            whileTap={{ scale: checked ? 0.98 : 1 }}
+                                            type="submit"
+                                            disabled={!checked || isLoading}
+                                            className={`group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-medium rounded-lg text-white transition-all duration-200 ${checked
+                                                    ? "bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 shadow-md shadow-emerald-600/20"
+                                                    : "bg-gray-400 cursor-not-allowed"
+                                                } disabled:opacity-50`}
+                                        >
+                                            {isLoading ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                    Sending OTP...
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-2">
+                                                    Get WhatsApp OTP
+                                                    <FaArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                                </div>
+                                            )}
+                                        </motion.button>
+                                    </form>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="signUpStep2"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.3 }}
                                 >
-                                    Account Type
-                                </label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <FaCheckCircle className="h-5 w-5 text-green-500" />
+                                    {/* Header */}
+                                    <div className="text-center mb-8">
+                                        <div className="w-16 h-16 bg-emerald-500/10 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-100">
+                                            <FaShieldAlt className="text-2xl" />
+                                        </div>
+                                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                                            Verify OTP
+                                        </h1>
+                                        <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                                            <span>Sent to <strong>{countryCode} {phone}</strong></span>
+                                            <button
+                                                onClick={() => {
+                                                    setStep(1);
+                                                    setErrMessage("");
+                                                }}
+                                                className="text-emerald-600 hover:underline flex items-center gap-1 font-medium"
+                                            >
+                                                <FaEdit className="text-xs" /> Edit
+                                            </button>
+                                        </div>
                                     </div>
-                                    <input
-                                        id="role"
-                                        name="role"
-                                        type="text"
-                                        value="User Account"
-                                        readOnly
-                                        className="block w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
-                                    />
-                                </div>
-                                <p className="mt-1 text-xs text-gray-500">
-                                    All new registrations are created as user accounts
-                                </p>
-                            </div>
 
-                            {/* Terms and Conditions */}
-                            <div className="flex items-start space-x-3">
-                                <div className="flex items-center h-5">
-                                    <input
-                                        id="terms"
-                                        name="terms"
-                                        type="checkbox"
-                                        checked={checked}
-                                        onChange={() => setChecked(!checked)}
-                                        className="w-4 h-4 text-gray-600 bg-gray-100 border-gray-300 rounded focus:ring-gray-500 focus:ring-2"
-                                    />
-                                </div>
-                                <div className="text-sm">
-                                    <label htmlFor="terms" className="text-gray-700">
-                                        I agree to the{" "}
-                                        <Link
-                                            to="#"
-                                            className="text-gray-900 font-medium hover:underline"
-                                        >
-                                            Terms of Service
-                                        </Link>{" "}
-                                        and{" "}
-                                        <Link
-                                            to="#"
-                                            className="text-gray-900 font-medium hover:underline"
-                                        >
-                                            Privacy Policy
-                                        </Link>
-                                    </label>
-                                </div>
-                            </div>
+                                    {/* OTP Form */}
+                                    <form onSubmit={handleVerifyOtp} className="space-y-6">
+                                        <div className="flex justify-center gap-2 sm:gap-3">
+                                            {otp.map((digit, index) => (
+                                                <input
+                                                    key={index}
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    maxLength={1}
+                                                    value={digit}
+                                                    onChange={(e) => handleOtpChange(e.target, index)}
+                                                    onKeyDown={(e) => handleOtpKeyDown(e, index)}
+                                                    className="w-11 h-12 text-center text-xl font-bold border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-lg focus:outline-none transition-all bg-gray-50"
+                                                />
+                                            ))}
+                                        </div>
 
-                            {/* Submit Button */}
-                            <motion.button
-                                whileHover={{ scale: checked ? 1.02 : 1 }}
-                                whileTap={{ scale: checked ? 0.98 : 1 }}
-                                type="submit"
-                                disabled={!checked || isLoading}
-                                className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white transition-all duration-200 ${checked
-                                        ? "bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                                        : "bg-gray-400 cursor-not-allowed"
-                                    } disabled:opacity-50`}
-                            >
-                                {isLoading ? (
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                        Creating Account...
+                                        {errMessage && (
+                                            <motion.p
+                                                initial={{ opacity: 0, y: -5 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="text-sm text-red-600 font-medium text-center"
+                                            >
+                                                ⚠️ {errMessage}
+                                            </motion.p>
+                                        )}
+
+                                        <motion.button
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            type="submit"
+                                            disabled={isLoading}
+                                            className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md shadow-emerald-600/20"
+                                        >
+                                            {isLoading ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                    Verifying...
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-2">
+                                                    Verify & Create Account
+                                                    <FaCheckCircle className="w-4 h-4" />
+                                                </div>
+                                            )}
+                                        </motion.button>
+                                    </form>
+
+                                    {/* Resend Timer */}
+                                    <div className="mt-6 text-center text-sm text-gray-500">
+                                        {timer > 0 ? (
+                                            <p>Resend OTP in <span className="font-semibold text-emerald-600">{timer}s</span></p>
+                                        ) : (
+                                            <button
+                                                onClick={handleSendOtp}
+                                                disabled={isLoading}
+                                                className="text-emerald-600 hover:underline font-semibold"
+                                            >
+                                                Resend OTP via WhatsApp
+                                            </button>
+                                        )}
                                     </div>
-                                ) : (
-                                    <div className="flex items-center gap-2">
-                                        Create Account
-                                        <FaArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                    </div>
-                                )}
-                            </motion.button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* PRESERVED EMAIL/PASSWORD SIGNUP FORM MARKUP (COMMITTED OUT) */}
+                        {/*
+                        <form onSubmit={handleSignUpEmailPassword} className="space-y-6">
+                            <div>
+                                <label htmlFor="clientName">Full Name</label>
+                                <input id="clientName" type="text" value={clientName} onChange={handleName} placeholder="Enter your full name" />
+                            </div>
+                            <div>
+                                <label htmlFor="email">Email Address</label>
+                                <input id="email" type="email" value={email} onChange={handleEmail} placeholder="Enter your email" />
+                            </div>
+                            <div>
+                                <label htmlFor="password">Password</label>
+                                <input id="password" type={showPassword ? "text" : "password"} value={password} onChange={handlePassword} placeholder="Create password" />
+                            </div>
+                            <button type="submit">Create Account</button>
                         </form>
-
-                        {/* Divider */}
-                        <div className="mt-8">
-                            <div className="relative">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-gray-300" />
-                                </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="px-2 bg-white text-gray-500">
-                                        Already have an account?
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Sign In Link */}
-                        <div className="mt-6 text-center">
-                            <Link
-                                to="/signin"
-                                className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
-                            >
-                                Sign in to your account
-                                <FaArrowRight className="w-4 h-4" />
-                            </Link>
-                        </div>
+                        */}
                     </motion.div>
                 </div>
             </Container>

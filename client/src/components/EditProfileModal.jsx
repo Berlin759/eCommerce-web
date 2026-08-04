@@ -10,9 +10,9 @@ import toast from "react-hot-toast";
 const EditProfileModal = ({ user, onClose }) => {
     const dispatch = useDispatch();
     const [formData, setFormData] = useState({
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
+        name: user?.name || "",
+        email: user?.email || "",
+        phone: user?.phone || user?.addresses?.[0]?.phone || "",
     });
     const [saving, setSaving] = useState(false);
 
@@ -30,11 +30,13 @@ const EditProfileModal = ({ user, onClose }) => {
                 toast.success("Profile updated");
                 onClose();
             } else {
-                throw new Error(res.data.message || "Update failed");
+                toast.error(res.data.message || "Update failed");
+                // throw new Error(res.data.message || "Update failed");
             }
         } catch (err) {
-            console.error(err);
-            toast.error(err.message || "Update failed");
+            console.error("Profile Update Error:", err);
+            const msg = err.response?.data?.message || err.message || "Update failed";
+            toast.error(msg);
         } finally {
             setSaving(false);
         }
@@ -71,12 +73,16 @@ const EditProfileModal = ({ user, onClose }) => {
                     </div>
 
                     <div>
-                        <label className="text-sm text-gray-600">Phone</label>
+                        <label className="text-sm text-gray-600 flex items-center justify-between">
+                            <span>Phone Number</span>
+                            <span className="text-xs text-gray-400 font-normal">(Cannot be edited)</span>
+                        </label>
                         <input
                             name="phone"
                             value={formData.phone}
-                            onChange={handleChange}
-                            className="w-full mt-1 p-3 border rounded-lg"
+                            disabled
+                            readOnly
+                            className="w-full mt-1 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 font-medium cursor-not-allowed select-none"
                         />
                     </div>
                 </div>

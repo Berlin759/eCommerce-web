@@ -6,6 +6,8 @@ import {
     updateUser,
     userLogin,
     userRegister,
+    sendPhoneOtp,
+    verifyPhoneOtp,
     getUserProfile,
     updateUserProfile,
     changeUserPassword,
@@ -33,6 +35,8 @@ const routeValue = "/api/user/";
 // Public routes
 router.post(`${routeValue}register`, userRegister);
 router.post(`${routeValue}login`, userLogin);
+router.post(`${routeValue}send-otp`, sendPhoneOtp);
+router.post(`${routeValue}verify-otp`, verifyPhoneOtp);
 router.post(`${routeValue}admin`, adminLogin);
 
 // User-protected routes

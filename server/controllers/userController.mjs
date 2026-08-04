@@ -2,6 +2,9 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
+import OTPModel from "../models/otpModel.js";
+import { generateOtp, sendWhatsAppOtpMeta } from "../config/general.js";
+import Constants from "../constants/index.js";
 import { cloudinary, deleteCloudinaryImage } from "../config/cloudinary.js";
 import fs from "fs";
 
@@ -22,6 +25,7 @@ const createToken = (user) => {
             id: user._id,
             email: user.email,
             name: user.name,
+            phone: user.phone || "",
             role: user.role,
         },
         process.env.JWT_SECRET,
@@ -313,9 +317,9 @@ const addAddress = async (req, res) => {
 
         const { label, street, city, state, zipCode, country, phone, isDefault } = req.body;
 
-        // Validate required fields
-        if (!label || !street || !city || !state || !zipCode || !country || !phone) {
-            return res.status(400).json({ success: false, message: "All address fields are required (label, street, city, state, zipCode, country, phone)", });
+        // Validate required fields (phone is optional / taken from user profile)
+        if (!label || !street || !city || !state || !zipCode || !country) {
+            return res.status(400).json({ success: false, message: "All address fields are required (label, street, city, state, zipCode, country)", });
         };
 
         const user = await userModel.findById(targetUserId);
@@ -336,7 +340,7 @@ const addAddress = async (req, res) => {
             state,
             zipCode,
             country,
-            phone: phone,
+            phone: phone || user.phone || "",
             isDefault: isDefault || user.addresses.length === 0,
         };
 
@@ -603,8 +607,8 @@ const getUserProfile = async (req, res) => {
             id: user._id,
             name: user.name,
             email: user.email,
+            phone: user.phone || (user.addresses && user.addresses[0] ? user.addresses[0].phone : ""),
             role: user.role,
-            phone: user.addresses && user.addresses[0] ? user.addresses[0].phone : "",
             address: user.addresses && user.addresses[0] ? user.addresses[0].street : "",
             avatar: user.avatar,
             createdAt: user.createdAt,
@@ -632,43 +636,53 @@ const updateUserProfile = async (req, res) => {
         }
 
         if (name) user.name = name;
-        if (email) {
-            if (!validator.isEmail(email)) {
-                return res.status(400).json({ success: false, message: "Please enter a valid email address", });
-            }
 
-            // Check if email is already taken by another user
-            const existingUser = await userModel.findOne({
-                email: email,
-                _id: { $ne: req.user.id },
-            });
-            if (existingUser) {
-                return res.status(400).json({ success: false, message: "Email is already taken by another user", });
-            }
+        if (email !== undefined) {
+            const trimmedEmail = String(email).trim();
+            if (trimmedEmail !== "") {
+                if (!validator.isEmail(trimmedEmail)) {
+                    return res.status(400).json({ success: false, message: "Please enter a valid email address" });
+                }
 
-            user.email = email;
+                // Check if non-empty email is already taken by another user
+                const existingUser = await userModel.findOne({
+                    email: trimmedEmail,
+                    _id: { $ne: req.user.id },
+                });
+                if (existingUser) {
+                    return res.status(400).json({ success: false, message: "Email is already taken by another user" });
+                }
+
+                user.email = trimmedEmail;
+            } else {
+                user.email = "";
+            }
         }
 
-        // Handle phone and address - update the first address or create one
-        if (phone || address) {
+        if (phone) {
+            user.phone = phone;
+            if (user.addresses && user.addresses.length > 0) {
+                user.addresses[0].phone = phone;
+            }
+        }
+
+        if (address) {
             if (!user.addresses || user.addresses.length === 0) {
-                // Create a default address entry
+                // Create a default address entry only if address text is provided
                 user.addresses = [
                     {
                         label: "Primary",
-                        street: address || "",
+                        street: address,
                         city: "",
                         state: "",
                         zipCode: "",
                         country: "",
-                        phone: phone || "",
+                        phone: user.phone || "",
                         isDefault: true,
                     },
                 ];
             } else {
-                // Update the first (primary) address
-                if (phone) user.addresses[0].phone = phone;
-                if (address) user.addresses[0].street = address;
+                user.addresses[0].street = address;
             }
         }
 
@@ -682,7 +696,7 @@ const updateUserProfile = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                phone: user.addresses && user.addresses[0] ? user.addresses[0].phone : "",
+                phone: user.phone || (user.addresses && user.addresses[0] ? user.addresses[0].phone : ""),
                 address: user.addresses && user.addresses[0] ? user.addresses[0].street : "",
                 avatar: user.avatar,
                 createdAt: user.createdAt,
@@ -906,9 +920,152 @@ const createAdmin = async (req, res) => {
     };
 };
 
+// Route for sending Phone OTP via Meta WhatsApp
+const sendPhoneOtp = async (req, res) => {
+    try {
+        const { phone, countryCode = "+91" } = req.body;
+
+        if (!phone) {
+            return res.status(400).json({ success: false, message: "Please enter your phone number" });
+        }
+
+        const cleanPhone = String(phone).trim();
+        // Validation: Ensure input contains only digits
+        if (!/^\d+$/.test(cleanPhone)) {
+            return res.status(400).json({ success: false, message: "Phone number must contain numbers only" });
+        }
+
+        // Validation based on country code
+        if (countryCode === "+91" && cleanPhone.length !== 10) {
+            return res.status(400).json({ success: false, message: "India (+91) phone number must be exactly 10 digits" });
+        } else if (cleanPhone.length < 7 || cleanPhone.length > 15) {
+            return res.status(400).json({ success: false, message: "Invalid phone number length for the selected country code" });
+        }
+
+        const fullPhone = `${countryCode}${cleanPhone}`;
+
+        // Check if user exists with this phone number; if not, create new user entry
+        let user = await userModel.findOne({
+            phone: cleanPhone,
+        });
+
+        if (!user) {
+            const dateDigits = Date.now().toString().slice(0, 4);
+            const randomDigits = Math.floor(1000 + Math.random() * 9000);
+            const generatedName = `User${dateDigits}${randomDigits}`;
+
+            user = new userModel({
+                name: generatedName,
+                phone: cleanPhone,
+                countryCode,
+                email: "",
+                password: "",
+                role: "user",
+            });
+            await user.save();
+        }
+
+        // Generate 6-digit OTP
+        const otp = await generateOtp();
+        const expirationMs = Constants.OTP_EXPIRATION_TIME || 10 * 60 * 1000;
+        const expireAt = new Date(Date.now() + expirationMs);
+
+        // Delete previous unverified OTPs for this user
+        await OTPModel.deleteMany({ userId: user._id });
+
+        // Save new OTP in database
+        await OTPModel.create({
+            userId: user._id,
+            otp: otp,
+            expireAt: expireAt,
+        });
+
+        // Send Meta WhatsApp OTP
+        const sendResult = await sendWhatsAppOtpMeta(fullPhone, otp);
+
+        if (!sendResult.success) {
+            return res.status(400).json({ success: false, message: sendResult.message });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: sendResult.message || "OTP sent to your WhatsApp number successfully",
+            devOtp: sendResult.devOtp,
+        });
+    } catch (error) {
+        console.error("Send Phone OTP Error:", error);
+        return res.status(400).json({ success: false, message: error.message || "Failed to send OTP" });
+    }
+};
+
+// Route for verifying Phone OTP and logging in
+const verifyPhoneOtp = async (req, res) => {
+    try {
+        const { phone, countryCode = "+91", otp } = req.body;
+
+        if (!phone || !otp) {
+            return res.status(400).json({ success: false, message: "Phone number and OTP are required" });
+        }
+
+        const cleanPhone = String(phone).trim();
+        const fullPhone = `${countryCode}${cleanPhone}`;
+
+        const user = await userModel.findOne({
+            phone: cleanPhone,
+        });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found with this phone number" });
+        }
+
+        const otpRecord = await OTPModel.findOne({
+            userId: user._id,
+        }).sort({ createdAt: -1 });
+
+        if (!otpRecord) {
+            return res.status(400).json({ success: false, message: "No OTP request found for this number" });
+        }
+
+        if (parseInt(otpRecord.otp) !== parseInt(otp)) {
+            return res.status(400).json({ success: false, message: "Invalid OTP. Please check and try again." });
+        }
+
+        if (otpRecord.expireAt && new Date(otpRecord.expireAt).getTime() < Date.now()) {
+            return res.status(400).json({ success: false, message: "Your OTP has expired. Please request a new one." });
+        }
+
+        // OTP verified - clean up OTP records
+        await OTPModel.deleteMany({ userId: user._id });
+
+        // Update user last login time
+        user.lastLogin = new Date();
+        await user.save();
+
+        const token = createToken(user);
+
+        return res.status(200).json({
+            success: true,
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                phone: user.phone,
+                email: user.email,
+                role: user.role,
+            },
+            message: "User logged in successfully!",
+        });
+    } catch (error) {
+        console.error("Verify Phone OTP Error:", error);
+        return res.status(400).json({ success: false, message: error.message || "OTP verification failed" });
+    }
+};
+
 export {
     userLogin,
     userRegister,
+    sendPhoneOtp,
+    verifyPhoneOtp,
     adminLogin,
     getUsers,
     removeUser,
