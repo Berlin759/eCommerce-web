@@ -67,6 +67,9 @@ export const log1 = (msg) => {
 
 export const generateOtp = async () => {
     try {
+
+        if (process.env.NODE_ENV === "local") return "123456";
+
         const otp = crypto.randomInt(100000, 999999);
 
         return otp;
@@ -320,39 +323,71 @@ export const sendWhatsAppOtpMeta = async (mobile, otp) => {
     try {
         const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
         const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-
-        console.log("phoneNumberId------------>", phoneNumberId);
-        console.log("accessToken------------>", accessToken);
+        const templateName = process.env.WHATSAPP_TEMPLATE_NAME;
 
         // Clean mobile number (strip non-numeric except digits)
         const cleanMobile = String(mobile).replace(/[^0-9]/g, "");
-        console.log("cleanMobile-----000------->", cleanMobile);
 
-        log1([`Sending Meta WhatsApp OTP to: ${cleanMobile}, OTP: ${otp}`]);
+        log1([`Sending Meta WhatsApp OTP to: ${cleanMobile}`]);
 
-        if (!phoneNumberId || !accessToken) {
-            console.log(`\n====================================================`);
-            console.log(`[DEV MODE - META WHATSAPP OTP] Phone: ${cleanMobile} | OTP: ${otp}`);
-            console.log(`====================================================\n`);
+        if (process.env.NODE_ENV === "local") {
             return {
                 success: true,
                 message: "OTP sent to your WhatsApp Number successfully",
             };
-        }
+        };
 
         const url = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
 
-        const payload = {
-            messaging_product: "whatsapp",
-            recipient_type: "individual",
-            to: cleanMobile,
-            type: "text",
-            text: {
-                preview_url: false,
-                body: `Your verification code is ${otp}. Valid for 10 minutes. Do not share this code with anyone.`,
-            },
+        // If template name is provided in env, use template payload, otherwise text payload
+        let payload;
+        if (templateName) {
+            payload = {
+                messaging_product: "whatsapp",
+                recipient_type: "individual",
+                to: cleanMobile,
+                type: "template",
+                template: {
+                    name: templateName,
+                    language: {
+                        code: "en_US",
+                    },
+                    components: [
+                        {
+                            type: "body",
+                            parameters: [
+                                {
+                                    type: "text",
+                                    text: String(otp),
+                                },
+                            ],
+                        },
+                        {
+                            type: "button",
+                            sub_type: "url",
+                            index: "0",
+                            parameters: [
+                                {
+                                    type: "text",
+                                    text: String(otp),
+                                },
+                            ],
+                        },
+                    ],
+                },
+            };
+        } else {
+            payload = {
+                messaging_product: "whatsapp",
+                recipient_type: "individual",
+                to: cleanMobile,
+                type: "text",
+                text: {
+                    preview_url: false,
+                    body: `Your verification code is ${otp}. Valid for 10 minutes. Do not share this code with anyone.`,
+                },
+            };
         };
-        console.log("payload-----000------->", payload);
 
         const response = await axios.post(url, payload, {
             headers: {
@@ -360,7 +395,6 @@ export const sendWhatsAppOtpMeta = async (mobile, otp) => {
                 "Content-Type": "application/json",
             },
         });
-        console.log("response.data-----000------->", response.data);
 
         if (response.data && (response.status === 200 || response.status === 201)) {
             return {
@@ -371,19 +405,18 @@ export const sendWhatsAppOtpMeta = async (mobile, otp) => {
             console.error("Meta WhatsApp API Error:", response.data);
             return {
                 success: false,
-                message: response.data?.error?.message || "Failed to send OTP via Meta WhatsApp",
+                message: "Failed to send OTP via WhatsApp",
             };
-        }
+        };
     } catch (error) {
-        log1(["Error sending Meta WhatsApp OTP -------->", error.response?.data || error.message]);
-        console.log(`\n====================================================`);
-        console.log(`[DEV FALLBACK - META WHATSAPP OTP] Phone: ${mobile} | OTP: ${otp}`);
-        console.log(`====================================================\n`);
+        const metaError = error.response?.data?.error;
+        log1(["Error sending Meta WhatsApp OTP -------->", metaError || error.message]);
+
         return {
             success: false,
-            message: "Failed to send OTP via Meta WhatsApp",
+            message: "Failed to send OTP via WhatsApp",
         };
-    }
+    };
 };
 
 export const sendOtpOnWhatsApp = async (mobile, otp) => {

@@ -923,35 +923,29 @@ const createAdmin = async (req, res) => {
 // Route for sending Phone OTP via Meta WhatsApp
 const sendPhoneOtp = async (req, res) => {
     try {
-        console.log("req.body------------>", req.body);
         const { phone, countryCode = "+91" } = req.body;
 
         if (!phone) {
             return res.status(400).json({ success: false, message: "Please enter your phone number" });
-        }
+        };
 
         const cleanPhone = String(phone).trim();
-        console.log("cleanPhone------------>", cleanPhone);
-        // Validation: Ensure input contains only digits
+
         if (!/^\d+$/.test(cleanPhone)) {
             return res.status(400).json({ success: false, message: "Phone number must contain numbers only" });
-        }
+        };
 
-        // Validation based on country code
         if (countryCode === "+91" && cleanPhone.length !== 10) {
             return res.status(400).json({ success: false, message: "India (+91) phone number must be exactly 10 digits" });
         } else if (cleanPhone.length < 7 || cleanPhone.length > 15) {
             return res.status(400).json({ success: false, message: "Invalid phone number length for the selected country code" });
-        }
+        };
 
         const fullPhone = `${countryCode}${cleanPhone}`;
-        console.log("fullPhone------------>", fullPhone);
 
-        // Check if user exists with this phone number; if not, create new user entry
         let user = await userModel.findOne({
             phone: cleanPhone,
         });
-        console.log("user------------>", user);
 
         if (!user) {
             const dateDigits = Date.now().toString().slice(0, 4);
@@ -965,32 +959,25 @@ const sendPhoneOtp = async (req, res) => {
                 role: "user",
             });
             await user.save();
-        }
+        };
 
-        // Generate 6-digit OTP
         const otp = await generateOtp();
         const expirationMs = Constants.OTP_EXPIRATION_TIME || 10 * 60 * 1000;
         const expireAt = new Date(Date.now() + expirationMs);
 
-        console.log("otp------------>", otp);
-
-        // Delete previous unverified OTPs for this user
         await OTPModel.deleteMany({ userId: user._id });
 
-        // Save new OTP in database
         await OTPModel.create({
             userId: user._id,
             otp: otp,
             expireAt: expireAt,
         });
 
-        // Send Meta WhatsApp OTP
         const sendResult = await sendWhatsAppOtpMeta(fullPhone, otp);
-        console.log("sendResult------------>", sendResult);
 
         if (!sendResult.success) {
             return res.status(400).json({ success: false, message: sendResult.message });
-        }
+        };
 
         return res.status(200).json({
             success: true,
@@ -999,7 +986,7 @@ const sendPhoneOtp = async (req, res) => {
     } catch (error) {
         console.error("Send Phone OTP Error:", error);
         return res.status(400).json({ success: false, message: error.message || "Failed to send OTP" });
-    }
+    };
 };
 
 // Route for verifying Phone OTP and logging in
