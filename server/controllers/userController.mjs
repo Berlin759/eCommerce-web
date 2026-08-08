@@ -923,6 +923,7 @@ const createAdmin = async (req, res) => {
 // Route for sending Phone OTP via Meta WhatsApp
 const sendPhoneOtp = async (req, res) => {
     try {
+        console.log("req.body------------>", req.body);
         const { phone, countryCode = "+91" } = req.body;
 
         if (!phone) {
@@ -930,6 +931,7 @@ const sendPhoneOtp = async (req, res) => {
         }
 
         const cleanPhone = String(phone).trim();
+        console.log("cleanPhone------------>", cleanPhone);
         // Validation: Ensure input contains only digits
         if (!/^\d+$/.test(cleanPhone)) {
             return res.status(400).json({ success: false, message: "Phone number must contain numbers only" });
@@ -943,11 +945,13 @@ const sendPhoneOtp = async (req, res) => {
         }
 
         const fullPhone = `${countryCode}${cleanPhone}`;
+        console.log("fullPhone------------>", fullPhone);
 
         // Check if user exists with this phone number; if not, create new user entry
         let user = await userModel.findOne({
             phone: cleanPhone,
         });
+        console.log("user------------>", user);
 
         if (!user) {
             const dateDigits = Date.now().toString().slice(0, 4);
@@ -958,8 +962,6 @@ const sendPhoneOtp = async (req, res) => {
                 name: generatedName,
                 phone: cleanPhone,
                 countryCode,
-                email: "",
-                password: "",
                 role: "user",
             });
             await user.save();
@@ -969,6 +971,8 @@ const sendPhoneOtp = async (req, res) => {
         const otp = await generateOtp();
         const expirationMs = Constants.OTP_EXPIRATION_TIME || 10 * 60 * 1000;
         const expireAt = new Date(Date.now() + expirationMs);
+
+        console.log("otp------------>", otp);
 
         // Delete previous unverified OTPs for this user
         await OTPModel.deleteMany({ userId: user._id });
@@ -982,6 +986,7 @@ const sendPhoneOtp = async (req, res) => {
 
         // Send Meta WhatsApp OTP
         const sendResult = await sendWhatsAppOtpMeta(fullPhone, otp);
+        console.log("sendResult------------>", sendResult);
 
         if (!sendResult.success) {
             return res.status(400).json({ success: false, message: sendResult.message });
@@ -990,7 +995,6 @@ const sendPhoneOtp = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: sendResult.message || "OTP sent to your WhatsApp number successfully",
-            devOtp: sendResult.devOtp,
         });
     } catch (error) {
         console.error("Send Phone OTP Error:", error);

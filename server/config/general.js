@@ -321,8 +321,12 @@ export const sendWhatsAppOtpMeta = async (mobile, otp) => {
         const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
         const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
 
+        console.log("phoneNumberId------------>", phoneNumberId);
+        console.log("accessToken------------>", accessToken);
+
         // Clean mobile number (strip non-numeric except digits)
         const cleanMobile = String(mobile).replace(/[^0-9]/g, "");
+        console.log("cleanMobile-----000------->", cleanMobile);
 
         log1([`Sending Meta WhatsApp OTP to: ${cleanMobile}, OTP: ${otp}`]);
 
@@ -333,7 +337,6 @@ export const sendWhatsAppOtpMeta = async (mobile, otp) => {
             return {
                 success: true,
                 message: "OTP sent to your WhatsApp Number successfully",
-                devOtp: otp,
             };
         }
 
@@ -349,6 +352,7 @@ export const sendWhatsAppOtpMeta = async (mobile, otp) => {
                 body: `Your verification code is ${otp}. Valid for 10 minutes. Do not share this code with anyone.`,
             },
         };
+        console.log("payload-----000------->", payload);
 
         const response = await axios.post(url, payload, {
             headers: {
@@ -356,6 +360,7 @@ export const sendWhatsAppOtpMeta = async (mobile, otp) => {
                 "Content-Type": "application/json",
             },
         });
+        console.log("response.data-----000------->", response.data);
 
         if (response.data && (response.status === 200 || response.status === 201)) {
             return {
@@ -375,9 +380,8 @@ export const sendWhatsAppOtpMeta = async (mobile, otp) => {
         console.log(`[DEV FALLBACK - META WHATSAPP OTP] Phone: ${mobile} | OTP: ${otp}`);
         console.log(`====================================================\n`);
         return {
-            success: true,
-            message: "OTP sent successfully",
-            devOtp: otp,
+            success: false,
+            message: "Failed to send OTP via Meta WhatsApp",
         };
     }
 };

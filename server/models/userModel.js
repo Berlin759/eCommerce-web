@@ -4,6 +4,18 @@ const userSchema = new mongoose.Schema(
     {
         name: { type: String, default: "User" },
         email: { type: String, default: "" },
+
+        // db.users.dropIndex("email_1");
+        // db.users.createIndex(
+        //     { email: 1 },
+        //     {
+        //         unique: true,
+        //         partialFilterExpression: {
+        //             email: { $type: "string", $ne: "" }
+        //         }
+        //     }
+        // )
+
         password: { type: String, default: "" },
         phone: { type: String, unique: true, sparse: true },
         countryCode: { type: String, default: "+91" },
