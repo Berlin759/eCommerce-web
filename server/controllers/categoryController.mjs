@@ -22,7 +22,6 @@ const createCategory = async (req, res) => {
         const existingCategory = await categoryModel.findOne({
             // name: { $regex: new RegExp(`^${name}$`, "i") },
             name: name,
-            isActive: true,
         });
 
         if (existingCategory) {
@@ -90,9 +89,7 @@ const createCategory = async (req, res) => {
 // Get all categories
 const getCategories = async (req, res) => {
     try {
-        const categories = await categoryModel
-            .find({ isActive: true })
-            .sort({ createdAt: -1 });
+        const categories = await categoryModel.find({}).sort({ createdAt: -1 });
 
         return res.status(200).json({
             success: true,
@@ -135,15 +132,9 @@ const getCategory = async (req, res) => {
 
 // Update category
 const updateCategory = async (req, res) => {
-    console.log("====================================");
-    console.log("UPDATE CATEGORY API CALLED");
-    console.log("Params:", req.params);
-    console.log("Body:", req.body);
-    console.log("====================================");
-
     try {
         const { id } = req.params;
-        const { name, description, isActive } = req.body;
+        const { name, description } = req.body;
 
         const category = await categoryModel.findById(id);
         if (!category) {
@@ -158,7 +149,6 @@ const updateCategory = async (req, res) => {
             const existingCategory = await categoryModel.findOne({
                 // name: { $regex: new RegExp(`^${name}$`, "i") },
                 name: name,
-                isActive: true,
                 _id: { $ne: id },
             });
 
@@ -215,13 +205,10 @@ const updateCategory = async (req, res) => {
                 name: name || category.name,
                 slug: slugName,
                 // image: imageUrl,
-                // description:
-                //     description !== undefined ? description : category.description,
-                // isActive: isActive !== undefined ? isActive : category.isActive,
+                // description: description !== undefined ? description : category.description,
             },
             { new: true }
         );
-        console.log("Updated category:", updatedCategory);
 
         return res.status(200).json({
             success: true,
@@ -229,18 +216,12 @@ const updateCategory = async (req, res) => {
             category: updatedCategory,
         });
     } catch (error) {
-        console.error("====================================");
-        console.error("UPDATE CATEGORY ERROR");
-        console.error("Message:", error.message);
-        console.error("Name:", error.name);
-        console.error("Stack:", error.stack);
-        console.error("Full Error:", error);
-        console.error("====================================");
+        console.error("UPDATE CATEGORY ERROR:", error.message);
 
         return res.status(500).json({
             success: false,
             message: "Server error",
-            error: error.message
+            error: error.message,
         });
     }
 };
@@ -258,7 +239,7 @@ const deleteCategory = async (req, res) => {
             });
         }
 
-        await categoryModel.findByIdAndUpdate(id, { isActive: false });
+        await categoryModel.findByIdAndDelete(id);
 
         return res.status(200).json({
             success: true,
