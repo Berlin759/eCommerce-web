@@ -24,7 +24,7 @@ categoryRouter.post(
     // upload.single("image"),
     createCategory
 );
-categoryRouter.put(
+categoryRouter.post(
     `${routeValue}/:id`,
     adminAuth,
     // upload.single("image"),
