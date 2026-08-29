@@ -135,6 +135,12 @@ const getCategory = async (req, res) => {
 
 // Update category
 const updateCategory = async (req, res) => {
+    console.log("====================================");
+    console.log("UPDATE CATEGORY API CALLED");
+    console.log("Params:", req.params);
+    console.log("Body:", req.body);
+    console.log("====================================");
+
     try {
         const { id } = req.params;
         const { name, description, isActive } = req.body;
@@ -215,6 +221,7 @@ const updateCategory = async (req, res) => {
             },
             { new: true }
         );
+        console.log("Updated category:", updatedCategory);
 
         return res.status(200).json({
             success: true,
@@ -222,10 +229,18 @@ const updateCategory = async (req, res) => {
             category: updatedCategory,
         });
     } catch (error) {
-        console.error("Update category error:", error);
+        console.error("====================================");
+        console.error("UPDATE CATEGORY ERROR");
+        console.error("Message:", error.message);
+        console.error("Name:", error.name);
+        console.error("Stack:", error.stack);
+        console.error("Full Error:", error);
+        console.error("====================================");
+
         return res.status(500).json({
             success: false,
             message: "Server error",
+            error: error.message
         });
     }
 };
