@@ -150,7 +150,8 @@ const updateCategory = async (req, res) => {
         // Check if name is being changed and if new name already exists
         if (name && name !== category.name) {
             const existingCategory = await categoryModel.findOne({
-                name: { $regex: new RegExp(`^${name}$`, "i") },
+                // name: { $regex: new RegExp(`^${name}$`, "i") },
+                name: name,
                 _id: { $ne: id },
             });
 
@@ -159,8 +160,8 @@ const updateCategory = async (req, res) => {
                     success: false,
                     message: "Category name already exists",
                 });
-            }
-        }
+            };
+        };
 
         // let imageUrl = category.image;
 
