@@ -152,6 +152,7 @@ const updateCategory = async (req, res) => {
             const existingCategory = await categoryModel.findOne({
                 // name: { $regex: new RegExp(`^${name}$`, "i") },
                 name: name,
+                isActive: true,
                 _id: { $ne: id },
             });
 
@@ -210,7 +211,7 @@ const updateCategory = async (req, res) => {
                 // image: imageUrl,
                 // description:
                 //     description !== undefined ? description : category.description,
-                isActive: isActive !== undefined ? isActive : category.isActive,
+                // isActive: isActive !== undefined ? isActive : category.isActive,
             },
             { new: true }
         );
