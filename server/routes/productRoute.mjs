@@ -17,25 +17,25 @@ const routeValue = "/api/product/";
 // Admin routes for product management
 router.post(
     `${routeValue}add`,
+    adminAuth,
     upload.fields([
         { name: "image1", maxCount: 1 },
         { name: "image2", maxCount: 1 },
         { name: "image3", maxCount: 1 },
         { name: "image4", maxCount: 1 },
     ]),
-    adminAuth,
     addProduct
 );
 router.post(`${routeValue}remove`, adminAuth, removeProduct);
 router.put(
     `${routeValue}update/:id`,
+    adminAuth,
     upload.fields([
         { name: "image1", maxCount: 1 },
         { name: "image2", maxCount: 1 },
         { name: "image3", maxCount: 1 },
         { name: "image4", maxCount: 1 },
     ]),
-    adminAuth,
     updateProduct
 );
 router.post(`${routeValue}update-stock`, updateStock);

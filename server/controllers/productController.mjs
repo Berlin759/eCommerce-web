@@ -97,7 +97,7 @@ const addProduct = async (req, res) => {
         };
 
         const product = new productModel(productData);
-        product.save();
+        await product.save();
 
         return res.status(200).json({
             success: true,

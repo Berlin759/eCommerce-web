@@ -49,21 +49,24 @@ app.use(
         allowedHeaders: ["Content-Type", "Authorization", "ngrok-skip-browser-warning"],
     }),
 );
-app.use(express.json({ limit: "500mb" }));
-app.use(express.urlencoded({ extended: true, limit: "500mb" }));
-
-// dbConnect();
-// connectCloudinary();
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const routesPath = path.resolve(__dirname, "./routes");
 const routeFiles = readdirSync(routesPath);
-routeFiles.map(async (file) => {
-    const routeModule = await import(`./routes/${file}`);
-    app.use("/", routeModule.default);
-});
+
+// Synchronously load all routes before starting the server
+const loadRoutes = async () => {
+    await Promise.all(
+        routeFiles.map(async (file) => {
+            const routeModule = await import(`./routes/${file}`);
+            app.use("/", routeModule.default);
+        })
+    );
+};
 
 app.get("/", (req, res) => {
     res.status(200).send("API Active Now");
@@ -73,55 +76,48 @@ app.get("/health", (req, res) => {
     res.status(200).send("Server Running");
 });
 
-// app.listen(port, () => {
-//     console.log(`Server is running on ${port}`);
-// });
+// Global error handler middleware
+app.use((err, req, res, next) => {
+    console.error("Unhandled Server Error:", err);
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || "Internal Server Error",
+    });
+});
 
 const services = [
     process.env.CLIENT_LIVE_URL,
     process.env.ADMIN_LIVE_URL,
-    process.env.SERVER_LIVE_URL + "/health",
-];
+    process.env.SERVER_LIVE_URL ? `${process.env.SERVER_LIVE_URL}/health` : null,
+].filter(Boolean);
 
-cron.schedule("*/5 * * * *", async () => {
-    console.log("Running keep-alive ping...");
+if (services.length > 0) {
+    cron.schedule("*/5 * * * *", async () => {
+        console.log("Running keep-alive ping...");
+        await Promise.all(
+            services.map((url) =>
+                axios.get(url).catch((err) => console.log("Ping failed:", url, err.message))
+            )
+        );
+    });
+}
 
-    await Promise.all(
-        services.map((url) =>
-            axios.get(url).catch(() => console.log("Ping failed:", url))
-        )
-    );
+// Initialize routes and start server
+loadRoutes().then(() => {
+    httpServer.listen(port || 8000, () => {
+        console.log("Server is running on PORT ----->", port || 8000);
+        console.log("Server URL ----->", process.env.SERVER_URL || `http://localhost:${port || 8000}`);
 
-    // for (const url of services) {
-    //     try {
-    //         const res = await axios.get(url);
-    //         console.log(`Ping success: ${url} -> ${res.status}`);
-    //     } catch (error) {
-    //         console.log(`Ping failed: ${url}`);
-    //     };
-    // };
-});
+        dbConnect()
+            .then(() => console.log("Database connected successfully!"))
+            .catch((error) => {
+                console.log("Error in connecting to database ----->", error);
+                return process.exit(1);
+            });
 
-// dbConnect().then(() => {
-//     httpServer.listen(port, () => {
-//         console.log("Server is running on PORT ----->", port);
-//         console.log("Server URL ----->", process.env.SERVER_URL);
-//     });
-// }).catch((error) => {
-//     console.log("Error in connecting to database ----->", error);
-//     return process.exit(1);
-// });
-
-httpServer.listen(port, () => {
-    console.log("Server is running on PORT ----->", port);
-    console.log("Server URL ----->", process.env.SERVER_URL);
-
-    dbConnect()
-        .then(() => console.log("Database connected successfully!"))
-        .catch((error) => {
-            console.log("Error in connecting to database ----->", error);
-            return process.exit(1);
-        });
-
-    connectCloudinary();
+        connectCloudinary();
+    });
+}).catch((err) => {
+    console.error("Failed to load routes:", err);
+    process.exit(1);
 });

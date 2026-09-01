@@ -25,7 +25,7 @@ const Home = () => {
             setStats((prev) => ({ ...prev, loading: true, error: null }));
 
             // Fetch real data from server APIs
-            const response = await api.get(`${serverUrl}/api/dashboard/stats`);
+            const response = await api.get("/api/dashboard/stats");
 
             if (response.data.success) {
                 const { stats: serverStats } = response.data;

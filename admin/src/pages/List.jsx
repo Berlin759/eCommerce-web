@@ -61,7 +61,7 @@ const List = ({ token }) => {
     const fetchList = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(serverUrl + "/api/product/list");
+            const response = await api.get("/api/product/list");
             const data = response?.data;
 
             if (data?.success) {

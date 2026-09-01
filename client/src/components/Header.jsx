@@ -49,7 +49,6 @@ export const headerNavigation = [
 const Header = () => {
     let [isOpen, setIsOpen] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-    const [categories, setCategories] = useState([]);
     const location = useLocation();
     const { products, userInfo, orderCount } = useSelector((state) => state.orebiReducer);
     const categoriesList = useSelector((state) => state.orebiReducer.categoriesList);
@@ -59,26 +58,10 @@ const Header = () => {
         setIsOpen(!isOpen);
     };
 
-    // Fetch categories from products
-    const fetchCategoryOptions = async () => {
-        try {
-            const data = await getData(`${config?.baseUrl}/api/products`);
-            const products = data?.products || [];
-
-            // Extract unique categories
-            const uniqueCategories = [
-                ...new Set(products.map((p) => p.category).filter(Boolean)),
-            ];
-
-            setCategories(uniqueCategories);
-        } catch (error) {
-            console.error("Error fetching filter options:", error);
-        };
-    };
-
-    useEffect(() => {
-        fetchCategoryOptions();
-    }, []);
+    // Extract categories cleanly from Redux categoriesList state
+    const categories = Array.isArray(categoriesList)
+        ? categoriesList.map((c) => (typeof c === "string" ? c : c?.name)).filter(Boolean)
+        : [];
 
     return (
         <div className="border-b border-gray-200 sticky top-0 z-50 bg-white/95 backdrop-blur-sm shadow-sm">
