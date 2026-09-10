@@ -23,6 +23,7 @@ import {
     getUserAddresses,
     uploadUserAvatar,
     uploadAdminUserAvatar,
+    handleWhatsappWebhook,
 } from "../controllers/userController.mjs";
 import adminAuth from "../middleware/adminAuth.js";
 import userAuth from "../middleware/userAuth.js";
@@ -38,6 +39,11 @@ router.post(`${routeValue}login`, userLogin);
 router.post(`${routeValue}send-otp`, sendPhoneOtp);
 router.post(`${routeValue}verify-otp`, verifyPhoneOtp);
 router.post(`${routeValue}admin`, adminLogin);
+router.post(
+    `${routeValue}whatsapp/webhook`,
+    express.raw({ type: "application/json" }),
+    handleWhatsappWebhook
+);
 
 // User-protected routes
 router.get(`${routeValue}profile`, userAuth, getUserProfile);

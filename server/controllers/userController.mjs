@@ -1052,6 +1052,19 @@ const verifyPhoneOtp = async (req, res) => {
     }
 };
 
+const handleWhatsappWebhook = async (req, res) => {
+    try {
+        const eventType = req.body;
+        console.log("handleWhatsappWebhook eventType----->", eventType);
+        console.log("handleWhatsappWebhook eventType.event----->", eventType.event);
+
+        return res.sendStatus(200);
+    } catch (error) {
+        console.error("handleWhatsappWebhook error------->", error);
+        return res.status(500).json({ success: false, message: error.message });
+    };
+};
+
 export {
     userLogin,
     userRegister,
@@ -1076,4 +1089,5 @@ export {
     getUserAddresses,
     uploadUserAvatar,
     uploadAdminUserAvatar,
+    handleWhatsappWebhook,
 };
