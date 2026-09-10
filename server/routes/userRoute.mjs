@@ -39,7 +39,7 @@ router.post(`${routeValue}login`, userLogin);
 router.post(`${routeValue}send-otp`, sendPhoneOtp);
 router.post(`${routeValue}verify-otp`, verifyPhoneOtp);
 router.post(`${routeValue}admin`, adminLogin);
-router.post(
+router.get(
     `${routeValue}whatsapp/webhook`,
     express.raw({ type: "application/json" }),
     handleWhatsappWebhook

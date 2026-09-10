@@ -1054,14 +1054,17 @@ const verifyPhoneOtp = async (req, res) => {
 
 const handleWhatsappWebhook = async (req, res) => {
     try {
-        const eventType = req.body;
-        console.log("handleWhatsappWebhook eventType----->", eventType);
-        console.log("handleWhatsappWebhook eventType.event----->", eventType.event);
+        const mode = req.query["hub.mode"];
+        const token = req.query["hub.verify_token"];
+        const challenge = req.query["hub.challenge"];
+        console.log("handleWhatsappWebhook mode----->", mode);
+        console.log("handleWhatsappWebhook token----->", token);
+        console.log("handleWhatsappWebhook challenge----->", challenge);
 
-        return res.sendStatus(200);
+        return res.status(200).send(challenge);
     } catch (error) {
         console.error("handleWhatsappWebhook error------->", error);
-        return res.status(500).json({ success: false, message: error.message });
+        return res.sendStatus(403);
     };
 };
 
