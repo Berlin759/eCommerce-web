@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express from "express";
 import {
     adminLogin,
     getUsers,
@@ -29,7 +29,7 @@ import adminAuth from "../middleware/adminAuth.js";
 import userAuth from "../middleware/userAuth.js";
 import { avatarUpload } from "../middleware/avatarUpload.mjs";
 
-const router = Router();
+const router = express.Router();
 
 const routeValue = "/api/user/";
 
