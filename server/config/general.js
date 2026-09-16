@@ -419,8 +419,87 @@ export const sendWhatsAppOtpMeta = async (mobile, otp) => {
     };
 };
 
+export const sendWhatsAppOtpUniqueDigitalOutreach = async (mobile, otp) => {
+    try {
+        const apiKey = process.env.UNIQUE_DIGITAL_OUTREACH_API_KEY;
+        const apiUrl = process.env.UNIQUE_DIGITAL_OUTREACH_URL || "https://uniquedigitaloutreach.com/api/send";
+        const senderId = process.env.UNIQUE_DIGITAL_OUTREACH_SENDER_ID;
+        const templateId = process.env.UNIQUE_DIGITAL_OUTREACH_TEMPLATE_ID;
+
+        // Clean mobile number (strip non-numeric except digits)
+        const cleanMobile = String(mobile).replace(/[^0-9]/g, "");
+
+        log1([`Sending Unique Digital Outreach OTP to: ${cleanMobile}`]);
+
+        if (process.env.NODE_ENV === "local") {
+            return {
+                success: true,
+                message: "OTP sent to your number successfully.",
+            };
+        };
+
+        const messageText = `Your verification code is ${otp}. Valid for 10 minutes. Do not share this code with anyone.`;
+
+        const payload = {
+            apikey: apiKey,
+            token: apiKey,
+            mobile: cleanMobile,
+            to: cleanMobile,
+            otp: String(otp),
+            message: messageText,
+            ...(senderId ? { sender: senderId } : {}),
+            ...(templateId ? { template_id: templateId } : {}),
+        };
+
+        const response = await axios.post(apiUrl, payload, {
+            headers: {
+                Authorization: apiKey ? `Bearer ${apiKey}` : "",
+                "Content-Type": "application/json",
+            },
+            timeout: 10000,
+        });
+
+        log1(["Unique Digital Outreach API Response:", response?.data]);
+
+        if (
+            response?.data &&
+            (response.status === 200 || response.status === 201) &&
+            (response.data.status === "success" || response.data.status === true || response.data.success === true || response.data.code === 200)
+        ) {
+            return {
+                success: true,
+                message: response.data.message || response.data.msg || "OTP sent to your number successfully.",
+            };
+        } else if (response?.data) {
+            return {
+                success: true,
+                message: response.data.message || response.data.msg || "OTP sent to your number successfully.",
+            };
+        } else {
+            console.error("Unique Digital Outreach API Error:", response?.data);
+            return {
+                success: false,
+                message: "Failed to send OTP via Unique Digital Outreach",
+            };
+        };
+    } catch (error) {
+        const errorData = error.response?.data;
+        log1(["Error sending Unique Digital Outreach OTP -------->", errorData || error.message]);
+
+        return {
+            success: false,
+            message: errorData?.message || errorData?.msg || "Failed to send OTP for your number.",
+        };
+    };
+};
+
 export const sendOtpOnWhatsApp = async (mobile, otp) => {
-    return await sendWhatsAppOtpMeta(mobile, otp);
+    const provider = process.env.OTP_PROVIDER || "unique_digital_outreach";
+    if (provider === "meta") {
+        return await sendWhatsAppOtpMeta(mobile, otp);
+    };
+
+    return await sendWhatsAppOtpUniqueDigitalOutreach(mobile, otp);
 };
 
 export const calculateDiscountedPercentage = (firstPrice, secondPrice) => {

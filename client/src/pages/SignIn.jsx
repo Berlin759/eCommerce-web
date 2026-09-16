@@ -195,9 +195,6 @@ const SignIn = () => {
 
             if (response.data?.success) {
                 toast.success(response.data.message || "OTP sent to your WhatsApp number!");
-                if (response.data?.devOtp) {
-                    toast(`[Dev OTP]: ${response.data.devOtp}`, { icon: "🔑", duration: 6000 });
-                }
                 setStep(2);
                 setTimer(60);
             } else {

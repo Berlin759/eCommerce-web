@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
 import OTPModel from "../models/otpModel.js";
-import { generateOtp, sendWhatsAppOtpMeta } from "../config/general.js";
+import { generateOtp, sendOtpOnWhatsApp } from "../config/general.js";
 import Constants from "../constants/index.js";
 import { cloudinary, deleteCloudinaryImage } from "../config/cloudinary.js";
 import fs from "fs";
@@ -973,7 +973,7 @@ const sendPhoneOtp = async (req, res) => {
             expireAt: expireAt,
         });
 
-        const sendResult = await sendWhatsAppOtpMeta(fullPhone, otp);
+        const sendResult = await sendOtpOnWhatsApp(fullPhone, otp);
 
         if (!sendResult.success) {
             return res.status(400).json({ success: false, message: sendResult.message });
@@ -981,7 +981,7 @@ const sendPhoneOtp = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: sendResult.message || "OTP sent to your WhatsApp number successfully",
+            message: sendResult.message || "OTP sent to your number successfully",
         });
     } catch (error) {
         console.error("Send Phone OTP Error:", error);
