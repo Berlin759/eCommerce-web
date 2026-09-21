@@ -319,7 +319,7 @@ export const convertToTodayTime = (timeStr) => {
     return now;
 };
 
-export const sendWhatsAppOtpMeta = async (mobile, otp) => {
+export const sendWhatsAppOtpMeta = async (customerName, mobile, otp) => {
     try {
         const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
         const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
@@ -358,18 +358,11 @@ export const sendWhatsAppOtpMeta = async (mobile, otp) => {
                             parameters: [
                                 {
                                     type: "text",
-                                    text: String(otp),
+                                    text: String(customerName),
                                 },
-                            ],
-                        },
-                        {
-                            type: "button",
-                            sub_type: "url",
-                            index: "0",
-                            parameters: [
                                 {
                                     type: "text",
-                                    text: String(otp),
+                                    text: "#" + String(otp),
                                 },
                             ],
                         },
@@ -493,10 +486,10 @@ export const sendWhatsAppOtpUniqueDigitalOutreach = async (mobile, otp) => {
     };
 };
 
-export const sendOtpOnWhatsApp = async (mobile, otp) => {
+export const sendOtpOnWhatsApp = async (customerName, mobile, otp) => {
     const provider = process.env.OTP_PROVIDER || "unique_digital_outreach";
     if (provider === "meta") {
-        return await sendWhatsAppOtpMeta(mobile, otp);
+        return await sendWhatsAppOtpMeta(customerName, mobile, otp);
     };
 
     return await sendWhatsAppOtpUniqueDigitalOutreach(mobile, otp);

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { IoChevronDown, IoChevronUp } from "react-icons/io5";
 import Container from "../components/Container";
 import Breadcrumbs from "../components/Breadcrumbs";
@@ -196,12 +197,12 @@ const FAQ = () => {
                             or concerns.
                         </p>
                         <div className="flex flex-col sm:flex-row justify-center gap-4">
-                            <a
-                                href="/contact"
+                            <Link
+                                to="/contact"
                                 className="bg-gray-900 text-white px-8 py-3 rounded-md hover:bg-gray-800 transition-colors duration-200"
                             >
                                 Contact Us
-                            </a>
+                            </Link>
                             <a
                                 href="mailto:support@orebi.com"
                                 className="border border-gray-300 text-gray-700 px-8 py-3 rounded-md hover:bg-gray-50 transition-colors duration-200"

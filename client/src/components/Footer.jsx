@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import Container from "./Container";
@@ -55,44 +56,44 @@ const Footer = () => {
                         </h4>
                         <ul className="space-y-3">
                             <li>
-                                <a
-                                    href="/about"
+                                <Link
+                                    to="/about"
                                     className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm"
                                 >
                                     About Us
-                                </a>
+                                </Link>
                             </li>
                             <li>
-                                <a
-                                    href="/shop"
+                                <Link
+                                    to="/shop"
                                     className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm"
                                 >
                                     Shop
-                                </a>
+                                </Link>
                             </li>
                             <li>
-                                <a
-                                    href="/contact"
+                                <Link
+                                    to="/contact"
                                     className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm"
                                 >
                                     Contact
-                                </a>
+                                </Link>
                             </li>
                             <li>
-                                <a
-                                    href="/blog"
+                                <Link
+                                    to="/blog"
                                     className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm"
                                 >
                                     Blog
-                                </a>
+                                </Link>
                             </li>
                             <li>
-                                <a
-                                    href="/faq"
+                                <Link
+                                    to="/faq"
                                     className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm"
                                 >
                                     FAQ
-                                </a>
+                                </Link>
                             </li>
                         </ul>
                     </div>
@@ -106,12 +107,12 @@ const Footer = () => {
                             {categoriesList && categoriesList.length > 0 ? (
                                 categoriesList.map((cat) => (
                                     <li key={cat._id}>
-                                        <a
-                                            href={`/shop?category=${cat.slug}`}
+                                        <Link
+                                            to={`/shop?category=${cat.slug}`}
                                             className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm capitalize"
                                         >
                                             {cat.name}
-                                        </a>
+                                        </Link>
                                     </li>
                                 ))
                             ) : (

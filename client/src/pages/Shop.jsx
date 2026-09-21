@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import Container from "../components/Container";
 import ProductsSideNav from "../components/products/ProductsSideNav";
 import PaginationProductList from "../components/products/PaginationProductList";
@@ -156,9 +156,9 @@ const Shop = () => {
                     <div className="flex flex-col space-y-2">
                         <h1 className="text-3xl font-bold text-gray-900">Shop</h1>
                         <nav className="flex text-sm text-gray-500">
-                            <a href="/" className="hover:text-gray-700 transition-colors">
+                            <Link to="/" className="hover:text-gray-700 transition-colors">
                                 Home
-                            </a>
+                            </Link>
                             <span className="mx-2">/</span>
                             <span className="text-gray-900">Shop</span>
                         </nav>

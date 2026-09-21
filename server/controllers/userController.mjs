@@ -943,6 +943,8 @@ const sendPhoneOtp = async (req, res) => {
 
         const fullPhone = `${countryCode}${cleanPhone}`;
 
+        let customerName = "User";
+
         let user = await userModel.findOne({
             phone: cleanPhone,
         });
@@ -959,6 +961,10 @@ const sendPhoneOtp = async (req, res) => {
                 role: "user",
             });
             await user.save();
+
+            customerName = generatedName;
+        } else {
+            customerName = user?.name;
         };
 
         const otp = await generateOtp();
@@ -973,7 +979,7 @@ const sendPhoneOtp = async (req, res) => {
             expireAt: expireAt,
         });
 
-        const sendResult = await sendOtpOnWhatsApp(fullPhone, otp);
+        const sendResult = await sendOtpOnWhatsApp(customerName, fullPhone, otp);
 
         if (!sendResult.success) {
             return res.status(400).json({ success: false, message: sendResult.message });

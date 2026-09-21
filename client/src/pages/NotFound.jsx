@@ -13,7 +13,7 @@ const NotFound = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-white flex items-center">
+        <div className="min-h-[70vh] bg-white flex items-center py-12">
             <Container>
                 <div className="text-center max-w-4xl mx-auto">
                     {/* Error Illustration */}

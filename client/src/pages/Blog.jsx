@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
     IoCalendarOutline,
     IoBookOutline,
@@ -177,12 +178,12 @@ const Blog = () => {
                         <p className="text-gray-600 mb-4">
                             While you wait, check out our latest products!
                         </p>
-                        <a
-                            href="/shop"
+                        <Link
+                            to="/shop"
                             className="inline-block bg-gray-900 text-white px-8 py-3 rounded-md hover:bg-gray-800 transition-colors duration-200"
                         >
                             Shop Now
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </Container>

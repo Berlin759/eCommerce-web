@@ -271,6 +271,7 @@ const sendOrderOTP = async (req, res) => {
     try {
         const { orderId, phone } = req.body;
         const userId = req.user.id;
+        const customerName = req.user.name || "User";
 
         if (!orderId) {
             return res.status(400).json({ success: false, message: "Invalid Order Id" });
@@ -299,7 +300,7 @@ const sendOrderOTP = async (req, res) => {
 
         await OTPModel.create(payload);
 
-        const sendWhatsAppOtp = await sendOtpOnWhatsApp(phone, otp);
+        const sendWhatsAppOtp = await sendOtpOnWhatsApp(customerName, phone, otp);
         if (!sendWhatsAppOtp.success) {
             return res.status(400).json(sendWhatsAppOtp);
         };
