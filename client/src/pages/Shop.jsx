@@ -67,9 +67,12 @@ const Shop = () => {
 
         // Apply filters
         if (filters.category) {
-            filtered = filtered.filter((product) =>
-                product.category?.toLowerCase().includes(filters.category.toLowerCase())
-            );
+            const targetCat = String(filters.category).toLowerCase().replace(/-/g, " ").trim();
+            filtered = filtered.filter((product) => {
+                if (!product.category) return false;
+                const prodCat = String(product.category).toLowerCase().replace(/-/g, " ").trim();
+                return prodCat.includes(targetCat) || targetCat.includes(prodCat);
+            });
         };
 
         if (filters.brand) {
@@ -128,8 +131,21 @@ const Shop = () => {
     }, [products, filters, sortBy]);
 
     const handleFilterChange = (newFilters) => {
-        setFilters((prev) => ({ ...prev, ...newFilters }));
-        // Auto-close mobile filters when a filter is applied (optional UX enhancement)
+        setFilters((prev) => {
+            const updated = { ...prev, ...newFilters };
+            if (newFilters.category !== undefined) {
+                const searchParams = new URLSearchParams(window.location.search);
+                if (updated.category) {
+                    searchParams.set("category", updated.category);
+                } else {
+                    searchParams.delete("category");
+                }
+                const newSearch = searchParams.toString();
+                const newPath = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}`;
+                window.history.replaceState(null, "", newPath);
+            }
+            return updated;
+        });
         if (window.innerWidth < 1024) {
             setTimeout(() => setMobileFiltersOpen(false), 500);
         }
@@ -142,7 +158,9 @@ const Shop = () => {
             priceRange: "",
             search: "",
         });
-        // Auto-close mobile filters when clearing (optional UX enhancement)
+        const searchParams = new URLSearchParams(window.location.search);
+        searchParams.delete("category");
+        window.history.replaceState(null, "", window.location.pathname);
         if (window.innerWidth < 1024) {
             setTimeout(() => setMobileFiltersOpen(false), 500);
         }

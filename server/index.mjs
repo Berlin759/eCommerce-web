@@ -5,7 +5,7 @@ import cors from "cors";
 import http from "http";
 import { fileURLToPath } from "url";
 import path from "path";
-import { readdirSync } from "fs";
+import fs, { readdirSync } from "fs";
 import cron from "node-cron";
 import axios from "axios";
 import dbConnect from "./config/mongodb.js";
@@ -75,6 +75,18 @@ app.get("/", (req, res) => {
 app.get("/health", (req, res) => {
     res.status(200).send("Server Running");
 });
+
+// Serve client build if available and fallback to index.html for SPA routing
+const clientDistPath = path.resolve(__dirname, "../client/dist");
+if (fs.existsSync(clientDistPath)) {
+    app.use(express.static(clientDistPath));
+    app.get("*", (req, res, next) => {
+        if (req.path.startsWith("/api") || req.path === "/health") {
+            return next();
+        }
+        res.sendFile(path.join(clientDistPath, "index.html"));
+    });
+}
 
 // Global error handler middleware
 app.use((err, req, res, next) => {

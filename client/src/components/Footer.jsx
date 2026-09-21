@@ -108,7 +108,7 @@ const Footer = () => {
                                 categoriesList.map((cat) => (
                                     <li key={cat._id}>
                                         <Link
-                                            to={`/shop?category=${cat.slug}`}
+                                            to={`/shop?category=${cat.name}`}
                                             className="text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm capitalize"
                                         >
                                             {cat.name}

@@ -2,6 +2,13 @@ import { useState, useEffect } from "react";
 import { getData } from "../../helpers";
 import { config } from "../../../config";
 
+const isCategorySelected = (cat1, cat2) => {
+    if (!cat1 || !cat2) return false;
+    const norm1 = String(cat1).toLowerCase().replace(/-/g, " ").trim();
+    const norm2 = String(cat2).toLowerCase().replace(/-/g, " ").trim();
+    return norm1 === norm2;
+};
+
 const ProductsSideNav = ({ onFilterChange, filters, onClearFilters }) => {
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
@@ -41,8 +48,9 @@ const ProductsSideNav = ({ onFilterChange, filters, onClearFilters }) => {
     };
 
     const handleCategoryChange = (category) => {
+        const isCurrentSelected = isCategorySelected(filters?.category, category);
         onFilterChange({
-            category: filters?.category === category ? "" : category,
+            category: isCurrentSelected ? "" : category?.toLowerCase(),
         });
     };
 
@@ -115,9 +123,9 @@ const ProductsSideNav = ({ onFilterChange, filters, onClearFilters }) => {
                         >
                             <input
                                 type="checkbox"
-                                checked={filters?.category === category?.toLowerCase()}
-                                onChange={() => handleCategoryChange(category?.toLowerCase())}
-                                className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900 focus:ring-2"
+                                checked={isCategorySelected(filters?.category, category)}
+                                onChange={() => handleCategoryChange(category)}
+                                className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900 focus:ring-2 cursor-pointer"
                             />
                             <span className="ml-3 text-gray-700 group-hover:text-gray-900 transition-colors capitalize">
                                 {category}

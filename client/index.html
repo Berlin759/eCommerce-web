@@ -12,6 +12,17 @@
 
     <!-- Primary Meta Tags -->
     <title>ECommerce Shopping | Your Ultimate E-Commerce Destination</title>
+
+    <!-- SPA Redirect restoration script for static hosting -->
+    <script>
+      (function(){
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          history.replaceState(null, null, redirect);
+        }
+      })();
+    </script>
     <meta name="description"
         content="Discover a wide range of products at ECommerce Shopping. Shop fashion, electronics, and more with exclusive offers and fast delivery." />
     <meta name="keywords" content="ecommerce, online shopping, fashion, electronics, deals, ECommerce Shopping, offers" />
