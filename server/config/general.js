@@ -337,7 +337,7 @@ export const sendWhatsAppOtpMeta = async (customerName, mobile, otp) => {
             };
         };
 
-        const url = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
+        const url = `https://graph.facebook.com/v25.0/${phoneNumberId}/messages`;
 
         // If template name is provided in env, use template payload, otherwise text payload
         let payload;
