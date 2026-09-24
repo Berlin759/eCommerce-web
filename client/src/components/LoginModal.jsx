@@ -132,8 +132,6 @@ const LoginModal = ({ isOpen, onClose }) => {
                 phone,
                 countryCode,
             });
-            console.log("response------->", response);
-            console.log("response.data------->", response.data);
 
             if (response.data?.success) {
                 toast.success(response.data.message || "OTP sent to your WhatsApp number!");
@@ -145,8 +143,6 @@ const LoginModal = ({ isOpen, onClose }) => {
             }
         } catch (error) {
             console.error("Send OTP Error:", error);
-            console.error("Send OTP Error Response:", error.response);
-            console.error("Send OTP Error Response Data:", error.response?.data);
             const msg = error.response?.data?.message || "Failed to send OTP. Please try again.";
             setErrMessage(msg);
             toast.error(msg);
@@ -283,10 +279,11 @@ const LoginModal = ({ isOpen, onClose }) => {
                                         <button
                                             type="submit"
                                             disabled={!isPhoneValid || isLoading}
-                                            className={`w-full py-3.5 px-4 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${isPhoneValid && !isLoading
-                                                ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 cursor-pointer"
-                                                : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
-                                                }`}
+                                            className={`w-full py-3.5 px-4 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${
+                                                isPhoneValid && !isLoading
+                                                    ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 cursor-pointer"
+                                                    : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
+                                            }`}
                                         >
                                             {isLoading ? (
                                                 <div className="flex items-center gap-2">

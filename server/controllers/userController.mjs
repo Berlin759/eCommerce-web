@@ -982,7 +982,7 @@ const sendPhoneOtp = async (req, res) => {
         const sendResult = await sendOtpOnWhatsApp(customerName, fullPhone, otp);
 
         if (!sendResult.success) {
-            return res.status(400).json({ success: false, message: sendResult.message, data: sendResult.data });
+            return res.status(400).json({ success: false, message: sendResult.message });
         };
 
         return res.status(200).json({
