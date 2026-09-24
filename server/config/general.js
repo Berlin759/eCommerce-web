@@ -427,6 +427,7 @@ export const sendWhatsAppOtpMeta = async (customerName, mobile, otp) => {
                 url: url,
                 metaError: metaError,
                 errorMessage: error.message,
+                data: process.env,
             },
         };
     };
