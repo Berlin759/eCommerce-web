@@ -320,14 +320,16 @@ export const convertToTodayTime = (timeStr) => {
 };
 
 export const sendWhatsAppOtpMeta = async (customerName, mobile, otp) => {
+    const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+    const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+    const templateName = process.env.WHATSAPP_TEMPLATE_NAME;
+
+    // Clean mobile number (strip non-numeric except digits)
+    const cleanMobile = String(mobile).replace(/[^0-9]/g, "");
+
+    const url = `https://graph.facebook.com/v25.0/${phoneNumberId}/messages`;
+
     try {
-        const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-        const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-        const templateName = process.env.WHATSAPP_TEMPLATE_NAME;
-
-        // Clean mobile number (strip non-numeric except digits)
-        const cleanMobile = String(mobile).replace(/[^0-9]/g, "");
-
         log1([`Sending Meta WhatsApp OTP to: ${cleanMobile}`]);
 
         if (process.env.NODE_ENV === "local") {
@@ -336,8 +338,6 @@ export const sendWhatsAppOtpMeta = async (customerName, mobile, otp) => {
                 message: "OTP sent to your WhatsApp Number successfully",
             };
         };
-
-        const url = `https://graph.facebook.com/v25.0/${phoneNumberId}/messages`;
 
         // If template name is provided in env, use template payload, otherwise text payload
         let payload;
@@ -399,6 +399,16 @@ export const sendWhatsAppOtpMeta = async (customerName, mobile, otp) => {
             return {
                 success: false,
                 message: "Failed to send OTP via WhatsApp",
+                data: {
+                    step: "1",
+                    phoneNumberId: phoneNumberId,
+                    accessToken: accessToken,
+                    templateName: templateName,
+                    cleanMobile: cleanMobile,
+                    url: url,
+                    responseData: response.data,
+                    responseStatus: response.status,
+                },
             };
         };
     } catch (error) {
@@ -408,6 +418,16 @@ export const sendWhatsAppOtpMeta = async (customerName, mobile, otp) => {
         return {
             success: false,
             message: "Failed to send OTP via WhatsApp",
+            data: {
+                step: "2",
+                phoneNumberId: phoneNumberId,
+                accessToken: accessToken,
+                templateName: templateName,
+                cleanMobile: cleanMobile,
+                url: url,
+                metaError: metaError,
+                errorMessage: error.message,
+            },
         };
     };
 };
