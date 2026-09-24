@@ -221,9 +221,6 @@ const SignUp = () => {
                 countryCode,
             });
 
-            console.log("response---222---->", response);
-            console.log("response.data---222---->", response.data);
-
             if (response.data?.success) {
                 toast.success(response.data.message || "OTP sent to your WhatsApp number!");
                 setStep(2);
@@ -234,8 +231,6 @@ const SignUp = () => {
             }
         } catch (error) {
             console.error("Send OTP Error:", error);
-            console.error("Send OTP Error Response 222:", error.response);
-            console.error("Send OTP Error Response Data 222:", error.response?.data);
             const msg = error.response?.data?.message || "Failed to send OTP";
             setErrMessage(msg);
             toast.error(msg);

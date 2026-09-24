@@ -508,11 +508,13 @@ export const sendWhatsAppOtpUniqueDigitalOutreach = async (mobile, otp) => {
 
 export const sendOtpOnWhatsApp = async (customerName, mobile, otp) => {
     const provider = process.env.OTP_PROVIDER || "unique_digital_outreach";
-    if (provider === "meta") {
-        return await sendWhatsAppOtpMeta(customerName, mobile, otp);
-    };
+    // if (provider === "meta") {
+    //     return await sendWhatsAppOtpMeta(customerName, mobile, otp);
+    // };
 
-    return await sendWhatsAppOtpUniqueDigitalOutreach(mobile, otp);
+    return await sendWhatsAppOtpMeta(customerName, mobile, otp);
+
+    // return await sendWhatsAppOtpUniqueDigitalOutreach(mobile, otp);
 };
 
 export const calculateDiscountedPercentage = (firstPrice, secondPrice) => {
