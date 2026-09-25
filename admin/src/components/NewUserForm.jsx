@@ -4,9 +4,18 @@ import toast from "react-hot-toast";
 import Input, { Label } from "./ui/input";
 import axios from "axios";
 import { serverUrl } from "../../config";
-import { MdClose, MdLocationOn } from "react-icons/md";
+import { MdClose, MdLocationOn, MdPhone, MdEmail, MdPerson, MdShield } from "react-icons/md";
 import PropTypes from "prop-types";
 import AddressModal from "./AddressModal";
+
+const COUNTRY_CODES = [
+    { code: "+91", country: "India (+91)", maxDigits: 10 },
+    { code: "+1", country: "USA/Canada (+1)", maxDigits: 10 },
+    { code: "+44", country: "UK (+44)", maxDigits: 10 },
+    { code: "+61", country: "Australia (+61)", maxDigits: 9 },
+    { code: "+971", country: "UAE (+971)", maxDigits: 9 },
+    { code: "+65", country: "Singapore (+65)", maxDigits: 8 },
+];
 
 const NewUserForm = ({
     isOpen,
@@ -20,12 +29,14 @@ const NewUserForm = ({
     const [formData, setFormData] = useState({
         name: "",
         email: "",
-        password: "",
+        phone: "",
+        countryCode: "+91",
         role: "user",
         isActive: true,
         avatar: "",
     });
 
+    const [phoneError, setPhoneError] = useState("");
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [userAddresses, setUserAddresses] = useState([]);
     const [avatarFile, setAvatarFile] = useState(null);
@@ -48,38 +59,37 @@ const NewUserForm = ({
                 }
             } catch (error) {
                 console.error("Fetch addresses error", error);
-                // Don't show error toast here as it's just for UI enhancement
             }
         },
         [token]
     );
+
     useEffect(() => {
-        // If a user is selected, pre-fill the form with their details
+        setPhoneError("");
         if (selectedUser) {
             setFormData({
                 _id: selectedUser?._id || null,
                 name: selectedUser.name || "",
-                email: selectedUser.email || "",
-                password: "", // Leave password empty for security
+                email: selectedUser.email || "", // if user has never entered email, render empty string
+                phone: selectedUser.phone || "",
+                countryCode: selectedUser.countryCode || "+91",
                 role: selectedUser.role || "user",
                 isActive:
                     selectedUser.isActive !== undefined ? selectedUser.isActive : true,
                 avatar: selectedUser.avatar || "",
             });
 
-            // Set avatar preview if user has avatar
             setAvatarPreview(selectedUser.avatar || "");
 
-            // Fetch user addresses for address management
             if (selectedUser._id) {
                 fetchUserAddresses(selectedUser._id);
             }
         } else {
-            // Reset form data when no user is selected
             setFormData({
                 name: "",
                 email: "",
-                password: "",
+                phone: "",
+                countryCode: "+91",
                 role: "user",
                 isActive: true,
                 avatar: "",
@@ -94,7 +104,6 @@ const NewUserForm = ({
         const file = e.target.files[0];
         if (file) {
             if (file.size > 5 * 1024 * 1024) {
-                // 5MB limit
                 toast.error("File size must be less than 5MB");
                 return;
             }
@@ -106,7 +115,6 @@ const NewUserForm = ({
 
             setAvatarFile(file);
 
-            // Create preview URL
             const reader = new FileReader();
             reader.onloadend = () => {
                 setAvatarPreview(reader.result);
@@ -123,7 +131,7 @@ const NewUserForm = ({
 
         try {
             const response = await axios.post(
-                `${serverUrl}/api/user/upload-avatar`,
+                `${serverUrl}/api/user/admin/upload-avatar`,
                 formData,
                 {
                     headers: {
@@ -146,6 +154,43 @@ const NewUserForm = ({
         }
     };
 
+    const handlePhoneChange = (e) => {
+        // Enforce NUMERIC digits only
+        const val = e.target.value.replace(/[^0-9]/g, "");
+        const currentCountry = COUNTRY_CODES.find((c) => c.code === formData.countryCode) || COUNTRY_CODES[0];
+        const maxLen = currentCountry.maxDigits;
+
+        if (val.length > maxLen) {
+            return;
+        }
+
+        setFormData((prev) => ({ ...prev, phone: val }));
+
+        if (formData.countryCode === "+91" && val.length > 0 && val.length < 10) {
+            setPhoneError("Indian mobile numbers must be exactly 10 digits.");
+        } else {
+            setPhoneError("");
+        }
+    };
+
+    const handleCountryCodeChange = (e) => {
+        const newCode = e.target.value;
+        const currentCountry = COUNTRY_CODES.find((c) => c.code === newCode) || COUNTRY_CODES[0];
+        let newPhone = formData.phone;
+
+        if (newPhone.length > currentCountry.maxDigits) {
+            newPhone = newPhone.slice(0, currentCountry.maxDigits);
+        }
+
+        setFormData((prev) => ({ ...prev, countryCode: newCode, phone: newPhone }));
+
+        if (newCode === "+91" && newPhone.length > 0 && newPhone.length < 10) {
+            setPhoneError("Indian mobile numbers must be exactly 10 digits.");
+        } else {
+            setPhoneError("");
+        }
+    };
+
     const handleAddOrUpdateUser = async (e) => {
         e.preventDefault();
 
@@ -154,10 +199,16 @@ const NewUserForm = ({
             return;
         }
 
+        // Validate phone number if provided or India code
+        if (formData.countryCode === "+91" && formData.phone && formData.phone.length !== 10) {
+            setPhoneError("Indian mobile numbers must be exactly 10 digits.");
+            toast.error("Please enter a valid 10-digit mobile number for India.");
+            return;
+        }
+
         try {
             let avatarUrl = formData.avatar;
 
-            // Upload avatar if new file is selected
             if (avatarFile) {
                 const uploadedUrl = await uploadAvatar();
                 if (uploadedUrl) {
@@ -169,15 +220,12 @@ const NewUserForm = ({
             const userData = {
                 name: formData.name,
                 email: formData.email,
+                phone: formData.phone,
+                countryCode: formData.countryCode,
                 role: formData.role,
                 isActive: formData.isActive,
                 avatar: avatarUrl,
             };
-
-            // Only include password if it's provided
-            if (formData.password) {
-                userData.password = formData.password;
-            }
 
             if (selectedUser) {
                 response = await axios.put(
@@ -231,75 +279,95 @@ const NewUserForm = ({
             className="relative z-[9999] focus:outline-none"
             onClose={close}
         >
-            {/* Background overlay */}
-            <div
-                className="fixed inset-0 bg-black/20"
-                aria-hidden="true"
-            />
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
 
-            {/* Modal container */}
             <div className="fixed inset-0 z-[10000] w-screen overflow-y-auto">
-                <div className="flex min-h-full items-center justify-center p-2 sm:p-4 lg:p-6">
+                <div className="flex min-h-full items-center justify-center p-3 sm:p-6">
                     <DialogPanel
                         transition
-                        className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-3xl 
-                     rounded-xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-6 
-                     bg-white shadow-2xl border border-gray-200 text-black 
-                     max-h-[95vh] sm:max-h-[90vh] overflow-y-auto
-                     transform transition-all duration-300 ease-out
-                     data-[closed]:scale-95 data-[closed]:opacity-0"
+                        className="w-full max-w-2xl rounded-2xl p-6 bg-white shadow-2xl border border-gray-100 text-gray-900 
+                        max-h-[90vh] overflow-y-auto transform transition-all duration-300 ease-out"
                     >
                         {/* Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
-                            <DialogTitle
-                                as="h3"
-                                className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 pr-2"
-                            >
+                        <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+                            <DialogTitle as="h3" className="text-xl font-bold flex items-center gap-2 text-gray-900">
+                                <span className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                                    <MdPerson className="text-xl" />
+                                </span>
                                 {isReadOnly
-                                    ? "👤 User Details"
+                                    ? "User Profile Details"
                                     : selectedUser
-                                        ? "✏️ Edit User"
-                                        : "➕ Add New User"}
+                                        ? "Edit User Account"
+                                        : "Add New User Account"}
                             </DialogTitle>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="self-end sm:self-auto text-gray-400 hover:text-gray-600 hover:bg-gray-100 
-                         transition-colors p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-300"
+                                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors"
                                 aria-label="Close modal"
                             >
-                                <MdClose className="text-xl sm:text-2xl" />
+                                <MdClose className="text-xl" />
                             </button>
                         </div>
 
-                        {/* Read-only notification */}
                         {isReadOnly && (
-                            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                <p className="text-sm text-blue-800">
-                                    ℹ️ This is a read-only view. Only administrators can edit user
-                                    information.
+                            <div className="mb-4 p-3.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-2">
+                                <MdShield className="text-blue-600 text-lg flex-shrink-0" />
+                                <p className="text-xs sm:text-sm text-blue-800 font-medium">
+                                    Read-only view. Only administrators can modify user data.
                                 </p>
                             </div>
                         )}
 
-                        <form
-                            onSubmit={handleAddOrUpdateUser}
-                            className="space-y-4 sm:space-y-6"
-                        >
+                        <form onSubmit={handleAddOrUpdateUser} className="space-y-6">
+                            {/* Avatar Section */}
+                            <div className="flex items-center gap-5 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                <div className="relative flex-shrink-0">
+                                    {avatarPreview || formData.avatar ? (
+                                        <img
+                                            src={avatarPreview || formData.avatar}
+                                            alt="Avatar preview"
+                                            className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-sm"
+                                        />
+                                    ) : (
+                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-sm">
+                                            {formData.name ? formData.name.charAt(0).toUpperCase() : "?"}
+                                        </div>
+                                    )}
+                                </div>
+                                {!isReadOnly && (
+                                    <div className="flex-1">
+                                        <input
+                                            type="file"
+                                            id="avatarInput"
+                                            accept="image/*"
+                                            onChange={handleAvatarChange}
+                                            className="hidden"
+                                        />
+                                        <label
+                                            htmlFor="avatarInput"
+                                            className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 cursor-pointer text-xs font-semibold text-gray-700 transition"
+                                        >
+                                            {avatarFile ? "Change Avatar Image" : "Upload Profile Avatar"}
+                                        </label>
+                                        <p className="text-[11px] text-gray-500 mt-1">PNG or JPG max 5MB</p>
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Basic Information */}
-                            <div className="space-y-3 sm:space-y-4">
-                                <h4 className="text-base sm:text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                    Basic Information
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-bold uppercase tracking-wider text-gray-400">
+                                    Account Information
                                 </h4>
 
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <Label htmlFor="name">Full Name *</Label>
                                         <Input
                                             id="name"
                                             type="text"
                                             name="name"
-                                            placeholder="Enter full name"
+                                            placeholder="John Doe"
                                             onChange={handleChange}
                                             value={formData.name}
                                             required
@@ -308,19 +376,62 @@ const NewUserForm = ({
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="email">Email Address *</Label>
+                                        <Label htmlFor="email">Email Address</Label>
                                         <Input
                                             id="email"
                                             type="email"
                                             name="email"
-                                            placeholder="Enter email address"
+                                            placeholder="user@example.com"
                                             onChange={handleChange}
                                             value={formData.email}
-                                            required
                                             disabled={isReadOnly}
                                             className={isReadOnly ? "bg-gray-50" : ""}
                                         />
                                     </div>
+                                </div>
+
+                                {/* Mobile Number with Country Code */}
+                                <div>
+                                    <Label htmlFor="phone">Mobile Number</Label>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <select
+                                            value={formData.countryCode}
+                                            onChange={handleCountryCodeChange}
+                                            disabled={isReadOnly}
+                                            className={`px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-black focus:border-transparent font-medium ${
+                                                isReadOnly ? "opacity-75" : ""
+                                            }`}
+                                        >
+                                            {COUNTRY_CODES.map((c) => (
+                                                <option key={c.code} value={c.code}>
+                                                    {c.country}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <div className="relative flex-1">
+                                            <input
+                                                id="phone"
+                                                type="text"
+                                                inputMode="numeric"
+                                                placeholder={
+                                                    formData.countryCode === "+91"
+                                                        ? "10 digit mobile number"
+                                                        : "Mobile number"
+                                                }
+                                                value={formData.phone}
+                                                onChange={handlePhoneChange}
+                                                disabled={isReadOnly}
+                                                className={`w-full px-3 py-2 border rounded-lg text-sm outline-none transition-all ${
+                                                    phoneError
+                                                        ? "border-red-500 focus:ring-2 focus:ring-red-200"
+                                                        : "border-gray-300 focus:ring-2 focus:ring-black focus:border-transparent"
+                                                } ${isReadOnly ? "bg-gray-50" : ""}`}
+                                            />
+                                        </div>
+                                    </div>
+                                    {phoneError && (
+                                        <p className="text-xs text-red-600 mt-1 font-medium">{phoneError}</p>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -332,8 +443,9 @@ const NewUserForm = ({
                                             value={formData.role}
                                             onChange={handleChange}
                                             disabled={isReadOnly}
-                                            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent ${isReadOnly ? "bg-gray-50" : ""
-                                                }`}
+                                            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-black focus:border-transparent ${
+                                                isReadOnly ? "bg-gray-50" : ""
+                                            }`}
                                         >
                                             <option value="user">User</option>
                                             <option value="admin">Admin</option>
@@ -352,252 +464,68 @@ const NewUserForm = ({
                                                 }));
                                             }}
                                             disabled={isReadOnly}
-                                            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent ${isReadOnly ? "bg-gray-50" : ""
-                                                }`}
+                                            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-black focus:border-transparent ${
+                                                isReadOnly ? "bg-gray-50" : ""
+                                            }`}
                                         >
                                             <option value="true">Active</option>
                                             <option value="false">Inactive</option>
                                         </select>
                                     </div>
                                 </div>
-
-                                <div className="flex flex-col">
-                                    <Label htmlFor="password">
-                                        {selectedUser ? "New Password (optional)" : "Password *"}
-                                    </Label>
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        name="password"
-                                        placeholder="Enter password"
-                                        onChange={handleChange}
-                                        value={formData.password}
-                                        required={!selectedUser}
-                                        disabled={isReadOnly}
-                                        className={isReadOnly ? "bg-gray-50" : ""}
-                                    />
-                                </div>
-
-                                {/* Avatar Upload */}
-                                <div className="space-y-3">
-                                    <Label>Profile Avatar</Label>
-                                    <div className="flex items-center gap-4">
-                                        {/* Avatar Preview */}
-                                        <div className="relative">
-                                            {avatarPreview || formData.avatar ? (
-                                                <img
-                                                    src={avatarPreview || formData.avatar}
-                                                    alt="Avatar preview"
-                                                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                                                />
-                                            ) : (
-                                                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xl">
-                                                    {formData.name
-                                                        ? formData.name.charAt(0).toUpperCase()
-                                                        : "?"}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Upload Button */}
-                                        {!isReadOnly && (
-                                            <div className="flex-1">
-                                                <input
-                                                    type="file"
-                                                    id="avatar"
-                                                    accept="image/*"
-                                                    onChange={handleAvatarChange}
-                                                    className="hidden"
-                                                />
-                                                <label
-                                                    htmlFor="avatar"
-                                                    className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg 
-                                   hover:bg-gray-50 cursor-pointer transition-colors text-sm font-medium"
-                                                >
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                                        />
-                                                    </svg>
-                                                    {avatarFile ? "Change Image" : "Upload Image"}
-                                                </label>
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    PNG, JPG up to 5MB
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
                             </div>
 
-                            {/* Address Information */}
-                            <div className="space-y-4 sm:space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <h4 className="text-base sm:text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                        Address Management
-                                    </h4>
-                                    {selectedUser && (
+                            {/* Address Summary for Existing Users */}
+                            {selectedUser && (
+                                <div className="space-y-3 pt-3 border-t border-gray-100">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                                            <MdLocationOn className="text-green-600 text-sm" />
+                                            Saved Addresses ({userAddresses.length})
+                                        </h4>
                                         <button
                                             type="button"
                                             onClick={() => setIsAddressModalOpen(true)}
-                                            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-50 text-green-600 
-                               rounded-md hover:bg-green-100 transition-colors font-medium"
+                                            className="text-xs text-blue-600 hover:text-blue-800 font-semibold"
                                             disabled={isReadOnly}
                                         >
-                                            <MdLocationOn className="text-base" />
-                                            Manage Addresses ({userAddresses.length})
+                                            Manage Addresses
                                         </button>
-                                    )}
-                                </div>
-
-                                {/* Address Summary for existing users */}
-                                {selectedUser && userAddresses.length > 0 && (
-                                    <div className="bg-gray-50 rounded-lg p-4">
-                                        <h5 className="text-sm font-medium text-gray-700 mb-3">
-                                            Current Addresses:
-                                        </h5>
-                                        <div className="space-y-2">
-                                            {userAddresses.slice(0, 2).map((addr, index) => (
-                                                <div
-                                                    key={addr._id || index}
-                                                    className="flex items-center justify-between text-sm"
-                                                >
-                                                    <div className="flex items-center gap-2">
-                                                        <span
-                                                            className={`px-2 py-1 rounded-full text-xs ${addr.isDefault
-                                                                ? "bg-blue-100 text-blue-800"
-                                                                : "bg-gray-100 text-gray-600"
-                                                                }`}
-                                                        >
-                                                            {addr.label}
-                                                        </span>
-                                                        <span className="text-gray-600">
-                                                            {addr.city}, {addr.state}
-                                                        </span>
-                                                    </div>
+                                    </div>
+                                    {userAddresses.length > 0 ? (
+                                        <div className="space-y-1.5 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                            {userAddresses.slice(0, 2).map((addr, idx) => (
+                                                <div key={addr._id || idx} className="text-xs flex items-center justify-between text-gray-700">
+                                                    <span className="font-medium">{addr.label}: {addr.street}, {addr.city}</span>
                                                     {addr.isDefault && (
-                                                        <span className="text-xs text-blue-600 font-medium">
+                                                        <span className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5 rounded font-semibold">
                                                             Default
                                                         </span>
                                                     )}
                                                 </div>
                                             ))}
-                                            {userAddresses.length > 2 && (
-                                                <p className="text-xs text-gray-500">
-                                                    +{userAddresses.length - 2} more addresses
-                                                </p>
-                                            )}
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Additional Info for existing users */}
-                            {selectedUser && (
-                                <div className="space-y-4">
-                                    <h4 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
-                                        Account Information
-                                    </h4>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        <div className="bg-gray-50 rounded-lg p-4">
-                                            <Label>Account Status</Label>
-                                            <p
-                                                className={`font-medium ${selectedUser.isActive
-                                                    ? "text-green-600"
-                                                    : "text-red-600"
-                                                    }`}
-                                            >
-                                                {selectedUser.isActive ? "Active" : "Inactive"}
-                                            </p>
-                                        </div>
-                                        <div className="bg-gray-50 rounded-lg p-4">
-                                            <Label>Member Since</Label>
-                                            <p className="font-medium text-gray-700">
-                                                {new Date(selectedUser.createdAt).toLocaleDateString()}
-                                            </p>
-                                        </div>
-                                        {selectedUser.lastLogin && (
-                                            <div className="bg-gray-50 rounded-lg p-4">
-                                                <Label>Last Login</Label>
-                                                <p className="font-medium text-gray-700">
-                                                    {new Date(
-                                                        selectedUser.lastLogin
-                                                    ).toLocaleDateString()}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {selectedUser.orders && selectedUser.orders.length > 0 && (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div className="bg-blue-50 rounded-lg p-4">
-                                                <Label>Total Orders</Label>
-                                                <p className="text-2xl font-bold text-blue-600">
-                                                    {selectedUser.orders.length}
-                                                </p>
-                                            </div>
-                                            {selectedUser.userCart &&
-                                                Object.keys(selectedUser.userCart).length > 0 && (
-                                                    <div className="bg-orange-50 rounded-lg p-4">
-                                                        <Label>Cart Items</Label>
-                                                        <p className="text-2xl font-bold text-orange-600">
-                                                            {Object.keys(selectedUser.userCart).length}
-                                                        </p>
-                                                    </div>
-                                                )}
-                                        </div>
-                                    )}
-
-                                    {selectedUser.lastLogin && (
-                                        <div className="bg-gray-50 rounded-lg p-4">
-                                            <Label>Last Login</Label>
-                                            <p className="font-medium text-gray-700">
-                                                {new Date(selectedUser.lastLogin).toLocaleString()}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {selectedUser.orders && selectedUser.orders.length > 0 && (
-                                        <div className="bg-gray-50 rounded-lg p-4">
-                                            <Label>Total Orders</Label>
-                                            <p className="font-medium text-gray-700">
-                                                {selectedUser.orders.length} orders
-                                            </p>
-                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-gray-500 italic">No saved addresses for this user.</p>
                                     )}
                                 </div>
                             )}
 
-                            {/* Form Actions */}
-                            <div className="flex flex-col sm:flex-row gap-3 pt-4 sm:pt-6 border-t border-gray-200 mt-6">
+                            {/* Modal Action Buttons */}
+                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                                 <button
                                     type="button"
                                     onClick={() => setIsOpen(false)}
-                                    className="w-full sm:w-auto px-4 sm:px-6 py-2.5 border border-gray-300 text-gray-700 
-                         rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-gray-300 
-                         transition-all duration-200 font-medium text-sm sm:text-base"
+                                    className="px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
                                 >
                                     {isReadOnly ? "Close" : "Cancel"}
                                 </button>
                                 {!isReadOnly && (
                                     <button
                                         type="submit"
-                                        className="w-full sm:w-auto px-4 sm:px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 
-                           text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 
-                           focus:ring-2 focus:ring-blue-300 transition-all duration-200 
-                           font-medium text-sm sm:text-base shadow-md hover:shadow-lg transform hover:scale-[1.02]"
+                                        className="px-6 py-2.5 bg-black text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition shadow-sm"
                                     >
-                                        {selectedUser ? "💾 Update User" : "➕ Create User"}
+                                        {selectedUser ? "Save Changes" : "Create User"}
                                     </button>
                                 )}
                             </div>
@@ -606,7 +534,6 @@ const NewUserForm = ({
                 </div>
             </div>
 
-            {/* Address Management Modal */}
             <AddressModal
                 isOpen={isAddressModalOpen}
                 close={() => setIsAddressModalOpen(false)}

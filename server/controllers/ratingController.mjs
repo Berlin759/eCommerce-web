@@ -81,7 +81,7 @@ const listRatings = async (req, res) => {
             filter.productId = new ObjectId(productId);
         };
 
-        let query = ratingModel.find(filter).populate("userId", "name email avatar").populate("productId", "name").sort({ rating: -1 });
+        let query = ratingModel.find(filter).populate("userId", "name email avatar phone countryCode").populate("productId", "name").sort({ createdAt: -1 });
 
         if (limit) {
             query = query.limit(parseInt(limit));
@@ -141,7 +141,7 @@ const listByAdminRatings = async (req, res) => {
         };
 
         const ratingList = await ratingModel.find(filter)
-            .populate("userId", "name email avatar")
+            .populate("userId", "name email avatar phone countryCode")
             .populate("productId", "name images category")
             .sort(sortBy)
             // .limit(limit * 1)

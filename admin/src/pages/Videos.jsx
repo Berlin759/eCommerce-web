@@ -16,6 +16,7 @@ import { IoMdClose } from "react-icons/io";
 import { serverUrl } from "../../config";
 import api from "../api/axiosInstance";
 import { compressVideo, formatFileSize } from "../utils/videoCompression";
+import Pagination from "../components/Pagination";
 
 const formatDuration = (seconds) => {
     if (!seconds) return "0:00";
@@ -252,8 +253,20 @@ const Videos = () => {
         setUploadProgress(0);
     };
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     const filteredVideos = videos.filter((video) =>
         video.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
+    const paginatedVideos = filteredVideos.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
     );
 
     return (
@@ -338,68 +351,81 @@ const Videos = () => {
                         )}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredVideos.map((video) => (
-                            <div
-                                key={video._id}
-                                className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-                            >
-                                <div className="relative group">
-                                    {video.thumbnail ? (
-                                        <img
-                                            src={video.thumbnail}
-                                            alt={video.title}
-                                            className="w-full h-48 object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                            <FaVideo className="text-4xl text-gray-400" />
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {paginatedVideos.map((video) => (
+                                <div
+                                    key={video._id}
+                                    className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                                >
+                                    <div className="relative group">
+                                        {video.thumbnail ? (
+                                            <img
+                                                src={video.thumbnail}
+                                                alt={video.title}
+                                                className="w-full h-48 object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                                <FaVideo className="text-4xl text-gray-400" />
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
+                                            <div className="w-14 h-14 bg-white bg-opacity-90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <FaPlay className="text-black text-xl ml-1" />
+                                            </div>
                                         </div>
-                                    )}
-                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
-                                        <div className="w-14 h-14 bg-white bg-opacity-90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <FaPlay className="text-black text-xl ml-1" />
+                                        <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                                            <FaClock className="text-xs" />
+                                            {formatDuration(video.duration)}
                                         </div>
                                     </div>
-                                    <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                                        <FaClock className="text-xs" />
-                                        {formatDuration(video.duration)}
+                                    <div className="p-4">
+                                        <h3 className="font-semibold text-gray-900 mb-1 truncate">
+                                            {video.title}
+                                        </h3>
+                                        {video.description && (
+                                            <p className="text-sm text-gray-500 line-clamp-2">
+                                                {video.description}
+                                            </p>
+                                        )}
+                                        <div className="flex gap-2 mt-4">
+                                            <button
+                                                onClick={() => window.open(video.videoUrl, '_blank')}
+                                                className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+                                            >
+                                                <FaPlay className="text-xs" />
+                                                Play
+                                            </button>
+                                            <button
+                                                onClick={() => openModal(video)}
+                                                className="flex items-center justify-center gap-1 px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+                                            >
+                                                <FaEdit className="text-xs" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(video._id)}
+                                                className="flex items-center justify-center gap-1 px-3 py-2 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
+                                            >
+                                                <FaTrash className="text-xs" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="p-4">
-                                    <h3 className="font-semibold text-gray-900 mb-1 truncate">
-                                        {video.title}
-                                    </h3>
-                                    {video.description && (
-                                        <p className="text-sm text-gray-500 line-clamp-2">
-                                            {video.description}
-                                        </p>
-                                    )}
-                                    <div className="flex gap-2 mt-4">
-                                        <button
-                                            onClick={() => window.open(video.videoUrl, '_blank')}
-                                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
-                                        >
-                                            <FaPlay className="text-xs" />
-                                            Play
-                                        </button>
-                                        <button
-                                            onClick={() => openModal(video)}
-                                            className="flex items-center justify-center gap-1 px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
-                                        >
-                                            <FaEdit className="text-xs" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(video._id)}
-                                            className="flex items-center justify-center gap-1 px-3 py-2 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
-                                        >
-                                            <FaTrash className="text-xs" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={filteredVideos.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={setCurrentPage}
+                            onItemsPerPageChange={(newVal) => {
+                                setItemsPerPage(newVal);
+                                setCurrentPage(1);
+                            }}
+                        />
+                    </>
                 )}
 
                 {showModal && (

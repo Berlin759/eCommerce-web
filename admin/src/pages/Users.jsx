@@ -18,6 +18,8 @@ import PropTypes from "prop-types";
 import { useSelector, useDispatch } from "react-redux";
 import { setUser } from "../redux/authSlice";
 
+import Pagination from "../components/Pagination";
+
 const Users = ({ token }) => {
     const dispatch = useDispatch();
     const { user: currentUser } = useSelector((state) => state.auth);
@@ -28,6 +30,10 @@ const Users = ({ token }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     const isAdmin = currentUser?.role === "admin";
 
@@ -100,12 +106,14 @@ const Users = ({ token }) => {
     useEffect(() => {
         let filtered = usersList;
 
-        // Filter by search term
+        // Filter by search term (name, email, phone)
         if (searchTerm) {
+            const term = searchTerm.toLowerCase();
             filtered = filtered.filter(
                 (user) =>
-                    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+                    (user.name && user.name.toLowerCase().includes(term)) ||
+                    (user.email && user.email.toLowerCase().includes(term)) ||
+                    (user.phone && user.phone.includes(term))
             );
         }
 
@@ -115,6 +123,7 @@ const Users = ({ token }) => {
         }
 
         setFilteredUsers(filtered);
+        setCurrentPage(1); // Reset to page 1 whenever search/filter changes
     }, [usersList, searchTerm, roleFilter]);
 
     const handleRemoveUser = async (_id) => {
@@ -323,6 +332,9 @@ const Users = ({ token }) => {
                                                 User
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Mobile Number
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Role & Status
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -340,7 +352,9 @@ const Users = ({ token }) => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {filteredUsers.map((user) => (
+                                        {filteredUsers
+                                            .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                                            .map((user) => (
                                             <tr key={user._id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center">
@@ -353,7 +367,7 @@ const Users = ({ token }) => {
                                                                 />
                                                             ) : (
                                                                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                                                    {user.name.charAt(0).toUpperCase()}
+                                                                    {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                                                                 </div>
                                                             )}
                                                             {user.role === "admin" && (
@@ -370,10 +384,13 @@ const Users = ({ token }) => {
                                                                 {user.name}
                                                             </div>
                                                             <div className="text-sm text-gray-500">
-                                                                {user.email}
+                                                                {user.email || "No email"}
                                                             </div>
                                                         </div>
                                                     </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
+                                                    {user.phone ? `${user.countryCode || "+91"} ${user.phone}` : <span className="text-gray-400 font-normal">Not added</span>}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="space-y-2">
@@ -403,7 +420,7 @@ const Users = ({ token }) => {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="space-y-1 text-sm">
-                                                        {!user.lastLogin && user.orders.length === 0 && Object.keys(user.userCart).length === 0 ? (
+                                                        {!user.lastLogin && user.orders?.length === 0 && Object.keys(user.userCart || {}).length === 0 ? (
                                                             <div className="flex items-center gap-1 text-gray-600">
                                                                 No Activity
                                                             </div>
@@ -520,7 +537,9 @@ const Users = ({ token }) => {
 
                         {/* Mobile/Tablet Card View */}
                         <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            {filteredUsers.map((user) => (
+                            {filteredUsers
+                                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                                .map((user) => (
                                 <div
                                     key={user._id}
                                     className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200"
@@ -537,7 +556,7 @@ const Users = ({ token }) => {
                                                     />
                                                 ) : (
                                                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                                                        {user.name.charAt(0).toUpperCase()}
+                                                        {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                                                     </div>
                                                 )}
                                                 {user.role === "admin" && (
@@ -554,7 +573,10 @@ const Users = ({ token }) => {
                                                     {user.name}
                                                 </h3>
                                                 <p className="text-sm text-gray-500 truncate">
-                                                    {user.email}
+                                                    {user.email || "No email"}
+                                                </p>
+                                                <p className="text-xs text-gray-600 font-medium mt-0.5">
+                                                    📱 {user.phone ? `${user.countryCode || "+91"} ${user.phone}` : "No mobile"}
                                                 </p>
                                                 {/* Mobile role indicator */}
                                                 <div className="sm:hidden mt-1">
@@ -731,6 +753,19 @@ const Users = ({ token }) => {
                                 </div>
                             ))}
                         </div>
+
+                        {/* Pagination */}
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={Math.ceil(filteredUsers.length / itemsPerPage)}
+                            totalItems={filteredUsers.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={(page) => setCurrentPage(page)}
+                            onItemsPerPageChange={(limit) => {
+                                setItemsPerPage(limit);
+                                setCurrentPage(1);
+                            }}
+                        />
                     </>
                 ) : (
                     /* Empty State */

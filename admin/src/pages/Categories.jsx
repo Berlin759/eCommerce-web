@@ -13,6 +13,7 @@ import { IoMdClose } from "react-icons/io";
 import Container from "../components/Container";
 import { serverUrl } from "../../config";
 import api from "../api/axiosInstance";
+import Pagination from "../components/Pagination";
 
 const Categories = () => {
     const { token } = useSelector((state) => state.auth);
@@ -210,8 +211,20 @@ const Categories = () => {
     };
 
     // Filter categories based on search
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     const filteredCategories = categories.filter((category) =>
         category.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
+    const paginatedCategories = filteredCategories.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
     );
 
     return (
@@ -371,7 +384,7 @@ const Categories = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {filteredCategories.map((category) => (
+                                        {paginatedCategories.map((category) => (
                                             <tr key={category._id} className="hover:bg-gray-50">
                                                 {/* <td className="px-6 py-4">
                                                     <img
@@ -417,7 +430,7 @@ const Categories = () => {
 
                         {/* Mobile Card View */}
                         <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {filteredCategories.map((category) => (
+                            {paginatedCategories.map((category) => (
                                 <div
                                     key={category._id}
                                     className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
@@ -458,6 +471,17 @@ const Categories = () => {
                                 </div>
                             ))}
                         </div>
+
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={filteredCategories.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={setCurrentPage}
+                            onItemsPerPageChange={(newVal) => {
+                                setItemsPerPage(newVal);
+                                setCurrentPage(1);
+                            }}
+                        />
                     </>
                 )}
 

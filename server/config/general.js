@@ -130,24 +130,6 @@ export const ip2location = async (ipAddress) => {
     };
 };
 
-export const getAddressFromLatLng = async (lat, lng) => {
-    const apiKey = process.env.GOOGLE_API_KEY;
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
-    try {
-        const response = await axios.get(url, { headers: { Accept: 'application/json' } });
-        const data = response.data;
-        log1(["getAddressFromLatLng data ----->", data]);
-        if (data.status === "OK" && data.results.length > 0) {
-            return successResponse('Address details.', { result: data.results[0] });
-        } else {
-            return errorResponse("Address not found.");
-        }
-    } catch (error) {
-        log1(["Error in getAddressFromLatLng ----->", error]);
-        return errorResponse(messages.unexpectedDataError);
-    }
-}
-
 export const uploadProfileImage = async (file) => {
     try {
         const filePath = path.join('assets', 'uploads', 'profiles');

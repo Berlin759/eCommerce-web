@@ -19,6 +19,7 @@ import {
     FaEnvelope,
 } from "react-icons/fa";
 import api from "../api/axiosInstance";
+import Pagination from "../components/Pagination";
 
 const Contacts = () => {
     const [contactUs, setContactUs] = useState([]);
@@ -168,6 +169,18 @@ const Contacts = () => {
                 return aValue < bValue ? 1 : -1;
             }
         });
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter, sortBy, sortContactUs]);
+
+    const paginatedContactUs = filteredContactUs.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     // Get status color
     const getStatusColor = (status) => {
@@ -365,7 +378,7 @@ const Contacts = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredContactUs.map((contactUs) => (
+                            {paginatedContactUs.map((contactUs) => (
                                 <tr key={contactUs._id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-medium text-gray-900">
@@ -473,7 +486,7 @@ const Contacts = () => {
                         </p>
                     </div>
                 ) : (
-                    filteredContactUs.map((contactUs) => (
+                    paginatedContactUs.map((contactUs) => (
                         <div
                             key={contactUs._id}
                             className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
@@ -550,6 +563,17 @@ const Contacts = () => {
                     ))
                 )}
             </div>
+
+            <Pagination
+                currentPage={currentPage}
+                totalItems={filteredContactUs.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(newVal) => {
+                    setItemsPerPage(newVal);
+                    setCurrentPage(1);
+                }}
+            />
 
             {/* Edit Modal */}
             {showEditModal && editingContactUs && (

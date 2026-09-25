@@ -26,7 +26,6 @@ import ChangePasswordModal from "../components/ChangePasswordModal";
 const tabs = [
     { id: "profile", label: "Profile Info", icon: <FaUserCircle /> },
     { id: "address", label: "Address", icon: <FaMapMarkerAlt /> },
-    { id: "security", label: "Security", icon: <FaShieldAlt /> },
 ];
 
 const Profile = () => {
@@ -37,9 +36,21 @@ const Profile = () => {
     const [loading, setLoading] = useState(true);
     const [openEdit, setOpenEdit] = useState(false);
     const [openUpload, setOpenUpload] = useState(false);
-    const [openAddressEdit, setOpenAddressEdit] = useState(null); // address object or null
-    const [openChangePassword, setOpenChangePassword] = useState(false);
+    const [openAddressEdit, setOpenAddressEdit] = useState(null); // address object or null ({})
     const [activeTab, setActiveTab] = useState("profile");
+
+    const fetchUserProfile = async () => {
+        try {
+            const response = await api.get(`${serverUrl}/api/user/profile`);
+            if (response.data.success) {
+                dispatch(addUser(response.data.user));
+            }
+        } catch (error) {
+            console.error("Error fetching profile:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // fetch latest profile once on component mount
     useEffect(() => {
@@ -48,20 +59,6 @@ const Profile = () => {
             navigate("/");
             return;
         }
-
-        const fetchUserProfile = async () => {
-            try {
-                const response = await api.get(`${serverUrl}/api/user/profile`);
-                if (response.data.success) {
-                    dispatch(addUser(response.data.user));
-                }
-            } catch (error) {
-                console.error("Error fetching profile:", error);
-                toast.error("Unable to fetch profile");
-            } finally {
-                setLoading(false);
-            }
-        };
 
         fetchUserProfile();
     }, [navigate, dispatch]);
@@ -191,7 +188,7 @@ const Profile = () => {
                                             Email
                                         </label>
                                         <div className="mt-1 text-gray-800">
-                                            {userInfo.email}
+                                            {userInfo.email || "No email added"}
                                         </div>
                                     </div>
 
@@ -219,9 +216,17 @@ const Profile = () => {
                         {/* Address Tab */}
                         {activeTab === "address" && (
                             <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
-                                <h3 className="text-xl font-semibold mb-4">
-                                    Addresses
-                                </h3>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-xl font-semibold">
+                                        Addresses
+                                    </h3>
+                                    <button
+                                        onClick={() => setOpenAddressEdit({})}
+                                        className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2 text-sm font-medium"
+                                    >
+                                        + Add New Address
+                                    </button>
+                                </div>
 
                                 <div className="space-y-4">
                                     {userInfo.addresses && userInfo.addresses.length > 0 ? (
@@ -251,7 +256,7 @@ const Profile = () => {
                                                 <div className="flex flex-col gap-2">
                                                     <button
                                                         onClick={() => setOpenAddressEdit(addr)}
-                                                        className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                                        className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
                                                     >
                                                         Edit
                                                     </button>
@@ -259,49 +264,8 @@ const Profile = () => {
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="text-gray-600">No addresses found.</div>
+                                        <div className="text-gray-600">No addresses found. Click "+ Add New Address" to add one.</div>
                                     )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Security Tab */}
-                        {activeTab === "security" && (
-                            <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
-                                <h3 className="text-xl font-semibold mb-4">Security</h3>
-
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <div className="font-medium">Change password</div>
-                                            <div className="text-sm text-gray-600">
-                                                Update your account password periodically.
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <button
-                                                onClick={() => setOpenChangePassword(true)}
-                                                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                                            >
-                                                Change Password
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Optionally other security items */}
-                                    {/* <div className="flex items-center justify-between">
-                                        <div>
-                                            <div className="font-medium">Two-factor auth</div>
-                                            <div className="text-sm text-gray-600">
-                                                (Not implemented) Consider enabling 2FA for additional security.
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <button className="px-4 py-2 border rounded">
-                                                Manage
-                                            </button>
-                                        </div>
-                                    </div> */}
                                 </div>
                             </div>
                         )}
@@ -330,23 +294,12 @@ const Profile = () => {
                 <EditAddressModal
                     address={openAddressEdit}
                     onClose={() => setOpenAddressEdit(null)}
-                    onSuccess={(updatedAddress) => {
-                        // update addresses locally in redux
-                        const updated = {
-                            ...userInfo,
-                            addresses: userInfo.addresses.map((a) =>
-                                a._id === updatedAddress._id ? updatedAddress : a
-                            ),
-                        };
-                        dispatch(addUser(updated));
-                        toast.success("Address updated");
+                    onSuccess={async () => {
+                        await fetchUserProfile();
+                        toast.success("Address saved successfully");
                         setOpenAddressEdit(null);
                     }}
                 />
-            )}
-
-            {openChangePassword && (
-                <ChangePasswordModal onClose={() => setOpenChangePassword(false)} />
             )}
         </div>
     );

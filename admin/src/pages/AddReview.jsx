@@ -145,83 +145,29 @@ const AddReview = ({ token }) => {
                 </div>
                 <div className="p-6">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Product Search */}
-                        <div className="flex flex-col" ref={dropdownRef}>
+                        {/* Product Select Dropdown */}
+                        <div className="flex flex-col">
                             <Label htmlFor="product">Select Product *</Label>
-                            <div className="relative mt-1">
-                                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                <input
-                                    type="text"
-                                    id="product"
-                                    placeholder="Search products by name..."
-                                    value={searchTerm}
-                                    onChange={(e) => {
-                                        setSearchTerm(e.target.value);
-                                        if (selectedProduct) {
-                                            setSelectedProduct(null);
-                                        }
-                                        setShowDropdown(true);
-                                    }}
-                                    onFocus={() => setShowDropdown(true)}
-                                    className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                                />
-                                {selectedProduct && (
-                                    <button
-                                        type="button"
-                                        onClick={handleClearProduct}
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                    >
-                                        <FaTimes className="w-4 h-4" />
-                                    </button>
-                                )}
+                            <select
+                                id="product"
+                                value={selectedProduct?._id || ""}
+                                onChange={(e) => {
+                                    const prod = products.find((p) => p._id === e.target.value);
+                                    setSelectedProduct(prod || null);
+                                }}
+                                className="mt-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
+                                required
+                            >
+                                <option value="">-- Select Product --</option>
+                                {products.map((product) => (
+                                    <option key={product._id} value={product._id}>
+                                        {product.name} ({product.category} - ₹{product.price})
+                                    </option>
+                                ))}
+                            </select>
 
-                                {showDropdown && filteredProducts.length > 0 && (
-                                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                        {filteredProducts.slice(0, 20).map((product) => (
-                                            <button
-                                                key={product._id}
-                                                type="button"
-                                                onClick={() => handleSelectProduct(product)}
-                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-100 last:border-b-0"
-                                            >
-                                                {product.images && product.images[0] ? (
-                                                    <img
-                                                        src={product.images[0]}
-                                                        alt={product.name}
-                                                        className="w-10 h-10 rounded-lg object-cover"
-                                                    />
-                                                ) : product.image ? (
-                                                    <img
-                                                        src={product.image}
-                                                        alt={product.name}
-                                                        className="w-10 h-10 rounded-lg object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                                                        <span className="text-gray-400 text-xs">N/A</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-gray-900 truncate">
-                                                        {product.name}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500">
-                                                        {product.category} - ₹{product.price}
-                                                    </p>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {showDropdown && searchTerm && filteredProducts.length === 0 && !loadingProducts && (
-                                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center">
-                                        <p className="text-sm text-gray-500">No products found</p>
-                                    </div>
-                                )}
-                            </div>
                             {selectedProduct && (
-                                <div className="mt-2 flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="mt-3 flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                                     {selectedProduct.images && selectedProduct.images[0] ? (
                                         <img
                                             src={selectedProduct.images[0]}

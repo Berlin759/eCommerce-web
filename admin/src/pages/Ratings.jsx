@@ -16,6 +16,7 @@ import {
     FaStar,
 } from "react-icons/fa";
 import api from "../api/axiosInstance";
+import Pagination from "../components/Pagination";
 
 const Ratings = () => {
     const [ratingList, setRatingList] = useState([]);
@@ -122,7 +123,9 @@ const Ratings = () => {
                 item._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.userId?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+                item.userId?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.userId?.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.phone?.toLowerCase().includes(searchTerm.toLowerCase());
 
             const matchesRating = ratingFilter === "all" || item.rating.toString() === ratingFilter;
 
@@ -146,6 +149,18 @@ const Ratings = () => {
                     return new Date(b.createdAt) - new Date(a.createdAt); // newest first
             };
         });
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, ratingFilter, sortBy]);
+
+    const paginatedRating = filteredRating.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     useEffect(() => {
         fetchRating();
@@ -259,9 +274,6 @@ const Ratings = () => {
                                     Customer Name
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Customer Email
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Product Name
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -273,7 +285,7 @@ const Ratings = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredRating.map((rating) => (
+                            {paginatedRating.map((rating) => (
                                 <tr key={rating._id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-medium text-gray-900">
@@ -292,15 +304,9 @@ const Ratings = () => {
                                                     {rating.reviewerName || rating.userId?.name || "N/A"}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
-                                                    {rating.userId?.email || "N/A"}
+                                                    {rating.userId?.phone ? `${rating.userId?.countryCode || "+91"} ${rating.userId?.phone}` : (rating.phone || "No mobile")}
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center text-sm text-gray-900">
-                                            <FaEnvelope className="w-4 h-4 mr-2 text-gray-400" />
-                                            {rating.userId?.email || "N/A"}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -367,7 +373,7 @@ const Ratings = () => {
                         </p>
                     </div>
                 ) : (
-                    filteredRating.map((rating) => (
+                    paginatedRating.map((rating) => (
                         <div
                             key={rating._id}
                             className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
@@ -405,14 +411,6 @@ const Ratings = () => {
                                 </div>
                             </div>
 
-                            {/* Customer Info */}
-                            <div className="mb-3">
-                                <div className="text-sm text-gray-600 mb-1">Customer Email</div>
-                                <div className="text-sm font-medium text-gray-900">
-                                    {rating.userId?.email || "N/A"}
-                                </div>
-                            </div>
-
                             {/* Rating Details */}
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
@@ -432,6 +430,17 @@ const Ratings = () => {
                     ))
                 )}
             </div>
+
+            <Pagination
+                currentPage={currentPage}
+                totalItems={filteredRating.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(newVal) => {
+                    setItemsPerPage(newVal);
+                    setCurrentPage(1);
+                }}
+            />
 
             {/* Edit Modal */}
             {showEditModal && editingRating && (

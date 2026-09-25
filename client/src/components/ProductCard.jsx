@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import PropTypes from "prop-types";
+import { FaStar } from "react-icons/fa";
 import AddToCartButton from "./AddToCartButton";
 import PriceContainer from "./PriceContainer";
 
@@ -15,6 +16,10 @@ const ProductCard = ({ item, viewMode = "grid", className = "" }) => {
             },
         });
     };
+
+    const discountVal = item?.discountedPercentage || (item?.mrp && item?.price && item.mrp > item.price ? Math.round(((item.mrp - item.price) / item.mrp) * 100) : 0);
+    const avgRating = item?.averageRating || item?.rating || 0;
+    const totalRatings = item?.totalRatings || (item?.productReview ? item.productReview.length : 0);
 
     if (viewMode === "list") {
         return (
@@ -35,18 +40,18 @@ const ProductCard = ({ item, viewMode = "grid", className = "" }) => {
                             />
                         </div>
 
-                        {/* Sale Badge */}
-                        {item?.offer && (
-                            <div className="absolute top-3 left-3">
-                                {item?.discountedPercentage > 0 ? (
-                                    <span className="bg-black text-white text-xs font-medium px-2 py-1 uppercase tracking-wide">
-                                        -{item.discountedPercentage}%
-                                    </span>
-                                ) : (
-                                    <span className="bg-red-600 text-white text-xs font-medium px-2 py-1 uppercase tracking-wide">
-                                        Sale
-                                    </span>
-                                )}
+                        {/* Sale/Discount Badge */}
+                        {discountVal > 0 ? (
+                            <div className="absolute top-3 left-3 z-10">
+                                <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow uppercase tracking-wide">
+                                    {discountVal}% OFF
+                                </span>
+                            </div>
+                        ) : item?.offer && (
+                            <div className="absolute top-3 left-3 z-10">
+                                <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow uppercase tracking-wide">
+                                    Sale
+                                </span>
                             </div>
                         )}
 
@@ -124,24 +129,24 @@ const ProductCard = ({ item, viewMode = "grid", className = "" }) => {
                     />
                 </div>
 
-                {/* Sale Badge */}
-                {item?.offer && (
-                    <div className="absolute top-3 left-3">
-                        {item?.discountedPercentage > 0 ? (
-                            <span className="bg-black text-white text-xs font-medium px-2 py-1 uppercase tracking-wide">
-                                -{item.discountedPercentage}%
-                            </span>
-                        ) : (
-                            <span className="bg-red-600 text-white text-xs font-medium px-2 py-1 uppercase tracking-wide">
-                                Sale
-                            </span>
-                        )}
+                {/* Sale/Discount Badge */}
+                {discountVal > 0 ? (
+                    <div className="absolute top-3 left-3 z-10">
+                        <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow uppercase tracking-wide">
+                            {discountVal}% OFF
+                        </span>
+                    </div>
+                ) : item?.offer && (
+                    <div className="absolute top-3 left-3 z-10">
+                        <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow uppercase tracking-wide">
+                            Sale
+                        </span>
                     </div>
                 )}
 
                 {/* Badge for new items */}
                 {item?.badge && (
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-3 right-3 z-10">
                         <span className="bg-green-600 text-white text-xs font-medium px-2 py-1 uppercase tracking-wide">
                             New
                         </span>
@@ -167,11 +172,20 @@ const ProductCard = ({ item, viewMode = "grid", className = "" }) => {
             {/* Product Info */}
             <div className="pt-4 pb-4 px-4 text-center">
                 <h3
-                    className="text-sm font-medium text-gray-900 uppercase tracking-wide mb-2 cursor-pointer hover:text-gray-600 transition-colors duration-200"
+                    className="text-sm font-medium text-gray-900 uppercase tracking-wide mb-1 cursor-pointer hover:text-gray-600 transition-colors duration-200"
                     onClick={handleProductDetails}
                 >
                     {item?.name}
                 </h3>
+
+                {/* Star Rating */}
+                {avgRating > 0 && (
+                    <div className="flex items-center justify-center gap-1 text-xs font-semibold text-amber-500 mb-2">
+                        <FaStar className="w-3.5 h-3.5 fill-current" />
+                        <span>{Number(avgRating).toFixed(1)}</span>
+                        <span className="text-gray-400 font-normal">({totalRatings})</span>
+                    </div>
+                )}
 
                 {/* Price */}
                 <div className="mb-3">

@@ -25,18 +25,26 @@ const EditAddressModal = ({ address, onClose, onSuccess }) => {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const res = await api.put(
-                `${serverUrl}/api/user/addresses/${address._id}`,
-                form
-            );
-            if (res.data.success) {
-                onSuccess && onSuccess(res.data.address);
+            let res;
+            if (address && address._id) {
+                res = await api.put(
+                    `${serverUrl}/api/user/addresses/${address._id}`,
+                    form
+                );
             } else {
-                throw new Error(res.data.message || "Update failed");
+                res = await api.post(
+                    `${serverUrl}/api/user/addresses`,
+                    form
+                );
+            }
+            if (res.data.success) {
+                onSuccess && onSuccess(res.data.address || res.data.addresses);
+            } else {
+                throw new Error(res.data.message || "Save failed");
             }
         } catch (err) {
             console.error(err);
-            alert(err.message || "Address update failed");
+            alert(err.message || "Address save failed");
         } finally {
             setSaving(false);
         }
@@ -49,7 +57,9 @@ const EditAddressModal = ({ address, onClose, onSuccess }) => {
                 animate={{ y: 0, opacity: 1 }}
                 className="bg-white rounded-2xl p-6 w-full max-w-xl"
             >
-                <h3 className="text-xl font-semibold mb-4">Edit Address</h3>
+                <h3 className="text-xl font-semibold mb-4">
+                    {address && address._id ? "Edit Address" : "Add New Address"}
+                </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <input

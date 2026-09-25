@@ -80,36 +80,52 @@ const userRegister = async (req, res) => {
             name,
             email,
             password,
+            phone,
+            countryCode = "+91",
             role = "user",
             address,
             isActive = true,
         } = req.body;
-        const existingUser = await userModel.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ success: false, message: "User already exists" });
+
+        if (email) {
+            const existingUser = await userModel.findOne({ email });
+            if (existingUser) {
+                return res.status(400).json({ success: false, message: "User with this email already exists" });
+            }
+            if (!validator.isEmail(email)) {
+                return res.status(400).json({ success: false, message: "Please enter a valid email address" });
+            }
         }
 
-        // Validating email format & strong password
-        if (!validator.isEmail(email)) {
-            return res.status(400).json({ success: false, message: "Please enter a valid email address", });
+        if (phone) {
+            const existingPhoneUser = await userModel.findOne({ phone });
+            if (existingPhoneUser) {
+                return res.status(400).json({ success: false, message: "User with this mobile number already exists" });
+            }
         }
 
-        if (password.length < 8) {
-            return res.status(400).json({ success: false, message: "Password length should be equal or greater than 8", });
+        let userPassword = password;
+        if (!userPassword) {
+            // Auto-generate random password if created via admin without password
+            userPassword = Math.random().toString(36).slice(-10) + "A1!";
+        } else if (userPassword.length < 8) {
+            return res.status(400).json({ success: false, message: "Password length should be equal or greater than 8" });
         }
 
         // Only allow admin role creation if the request comes from an admin
         if (role === "admin" && (!req.user || req.user.role !== "admin")) {
-            return res.status(400).json({ success: false, message: "Only admins can create admin accounts", });
+            return res.status(400).json({ success: false, message: "Only admins can create admin accounts" });
         }
 
         // Hashing user password
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const hashedPassword = await bcrypt.hash(userPassword, salt);
 
         const newUser = new userModel({
             name,
-            email,
+            email: email || "",
+            phone: phone || undefined,
+            countryCode: countryCode || "+91",
             password: hashedPassword,
             role: role,
             isActive: isActive,
@@ -134,6 +150,8 @@ const userRegister = async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
+                phone: user.phone,
+                countryCode: user.countryCode,
                 role: user.role,
             },
             message: "User registered successfully!",
@@ -217,7 +235,7 @@ const removeUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
     try {
-        const { _id, name, email, password, role, avatar, addresses, isActive } = req.body;
+        const { _id, name, email, phone, countryCode, password, role, avatar, addresses, isActive } = req.body;
         const { id } = req.params;
 
         const user = await userModel.findById(id);
@@ -225,18 +243,25 @@ const updateUser = async (req, res) => {
             return res.status(400).json({ success: false, message: "User not found" });
         }
 
-        if (name) user.name = name;
-        if (email) {
-            if (!validator.isEmail(email)) {
-                return res.status(400).json({ success: false, message: "Please enter a valid email address", });
+        if (name !== undefined) user.name = name;
+        if (email !== undefined) {
+            if (email && !validator.isEmail(email)) {
+                return res.status(400).json({ success: false, message: "Please enter a valid email address" });
             }
             user.email = email;
+        }
+
+        if (phone !== undefined) {
+            user.phone = phone || undefined;
+        }
+        if (countryCode !== undefined) {
+            user.countryCode = countryCode || "+91";
         }
 
         if (role) {
             // Only allow admin role updates if the requesting user is admin
             if (role === "admin" && (!req.user || req.user.role !== "admin")) {
-                return res.status(400).json({ success: false, message: "Only admins can assign admin role", });
+                return res.status(400).json({ success: false, message: "Only admins can assign admin role" });
             }
             user.role = role;
         }
@@ -258,7 +283,7 @@ const updateUser = async (req, res) => {
 
         if (password) {
             if (password.length < 8) {
-                return res.status(400).json({ success: false, message: "Password length should be equal or greater than 8", });
+                return res.status(400).json({ success: false, message: "Password length should be equal or greater than 8" });
             }
 
             const salt = await bcrypt.genSalt(10);
@@ -276,29 +301,33 @@ const updateUser = async (req, res) => {
 
 const getUsers = async (req, res) => {
     try {
-        const { page = 1, limit = 10, role } = req.query;
-        const skip = (page - 1) * limit;
+        const { page, limit, role } = req.query;
 
         let filter = {};
-        if (role) {
+        if (role && role !== "all") {
             filter.role = role;
         }
 
         const total = await userModel.countDocuments(filter);
-        const users = await userModel
+        let query = userModel
             .find(filter)
-            .select("-password") // Exclude password from response
+            .select("-password")
             .populate("orders")
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(parseInt(limit));
+            .sort({ createdAt: -1 });
+
+        if (limit && parseInt(limit) > 0) {
+            const pageNum = parseInt(page) || 1;
+            const limitNum = parseInt(limit);
+            const skip = (pageNum - 1) * limitNum;
+            query = query.skip(skip).limit(limitNum);
+        }
+
+        const users = await query;
 
         return res.status(200).json({
             success: true,
             total,
             users,
-            currentPage: parseInt(page),
-            totalPages: Math.ceil(total / limit),
         });
     } catch (error) {
         console.error(error);
@@ -516,7 +545,7 @@ const getUserAddresses = async (req, res) => {
 // Avatar upload function
 const uploadUserAvatar = async (req, res) => {
     try {
-        const userId = req.user?.id;
+        const userId = req.user?._id || req.user?.id;
         if (!req.file) {
             return res.status(400).json({ success: false, message: "No file uploaded" });
         };
@@ -1049,6 +1078,7 @@ const verifyPhoneOtp = async (req, res) => {
                 phone: user.phone,
                 email: user.email,
                 role: user.role,
+                createdAt: user.createdAt,
             },
             message: "User logged in successfully!",
         });

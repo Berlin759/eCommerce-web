@@ -24,6 +24,8 @@ import {
 } from "react-icons/fa";
 import api from "../api/axiosInstance";
 
+import Pagination from "../components/Pagination";
+
 const Orders = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -36,6 +38,10 @@ const Orders = () => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [newStatus, setNewStatus] = useState("");
     const [newPaymentStatus, setNewPaymentStatus] = useState("");
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     const statusOptions = [
         "pending",
@@ -177,6 +183,10 @@ const Orders = () => {
                 return aValue < bValue ? 1 : -1;
             }
         });
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter, paymentFilter, sortBy, sortOrder]);
 
     // Get status color
     const getStatusColor = (status) => {
@@ -417,7 +427,9 @@ const Orders = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredOrders.map((order) => (
+                            {filteredOrders
+                                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                                .map((order) => (
                                 <tr key={order._id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-medium text-gray-900">
@@ -547,7 +559,9 @@ const Orders = () => {
                         </p>
                     </div>
                 ) : (
-                    filteredOrders.map((order) => (
+                    filteredOrders
+                        .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                        .map((order) => (
                         <div
                             key={order._id}
                             className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
@@ -651,6 +665,19 @@ const Orders = () => {
                     ))
                 )}
             </div>
+
+            {/* Pagination Component */}
+            <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(filteredOrders.length / itemsPerPage)}
+                totalItems={filteredOrders.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={(page) => setCurrentPage(page)}
+                onItemsPerPageChange={(limit) => {
+                    setItemsPerPage(limit);
+                    setCurrentPage(1);
+                }}
+            />
 
             {/* Edit Modal */}
             {showEditModal && editingOrder && (

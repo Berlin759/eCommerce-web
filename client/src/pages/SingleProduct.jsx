@@ -226,17 +226,22 @@ const SingleProduct = () => {
                         </div>
 
                         {/* Rating */}
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 bg-green-600 text-white px-2.5 py-1 rounded-md">
-                                <span className="text-sm font-semibold">{productInfo?.averageRating?.toFixed(1) || "0.0"}</span>
-                                <MdStar className="w-3.5 h-3.5" />
-                                ({productInfo?.totalRatings || 0} Customer Review{productInfo?.totalRatings !== 1 ? "s" : ""})
-                            </div>
-                            {/* <span className="text-gray-400 text-lg">|</span>
-                            <span className="text-sm text-gray-600">
-                                {productInfo?.totalRatings || 0} customer review{productInfo?.totalRatings !== 1 ? "s" : ""}
-                            </span> */}
-                        </div>
+                        {(() => {
+                            const totalReviewCount = productReview?.length > 0 ? productReview.length : (productInfo?.totalRatings || 0);
+                            const calculatedAvgRating = productReview?.length > 0
+                                ? (productReview.reduce((sum, item) => sum + (Number(item.rating) || 5), 0) / productReview.length)
+                                : (productInfo?.averageRating || 0);
+
+                            return (
+                                <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1 bg-green-600 text-white px-2.5 py-1 rounded-md">
+                                        <span className="text-sm font-semibold">{calculatedAvgRating.toFixed(1)}</span>
+                                        <MdStar className="w-3.5 h-3.5" />
+                                        ({totalReviewCount} Customer Review{totalReviewCount !== 1 ? "s" : ""})
+                                    </div>
+                                </div>
+                            );
+                        })()}
 
                         {/* Description */}
                         <p className="text-gray-600 leading-relaxed text-lg">

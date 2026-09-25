@@ -8,7 +8,6 @@ import { getTomorrowInTimezone } from "../config/general.js";
 const { ObjectId } = mongoose.Types;
 
 const SHIPMENT_BASE_URL = process.env.SHIPMENT_BASE_URL;
-const TOKEN = process.env.DELHIVERY_TOKEN;
 
 let token = null;
 
@@ -97,7 +96,7 @@ export const createShipment = async (order) => {
         const payload = {
             order_id: order.orderId,
             order_date: new Date().toISOString(),
-            pickup_location: process.env.DELHIVERY_PICKUP_LOCATION,
+            pickup_location: process.env.SHIPMENT_PICKUP_LOCATION,
 
             billing_customer_name: order.customerName,
             billing_last_name: order.lastName,

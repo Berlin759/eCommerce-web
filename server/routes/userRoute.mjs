@@ -74,7 +74,7 @@ router.post(
 
 // Avatar upload route (admin only)
 router.post(
-    `${routeValue}upload-avatar`,
+    `${routeValue}admin/upload-avatar`,
     adminAuth,
     avatarUpload.single("avatar"),
     uploadAdminUserAvatar

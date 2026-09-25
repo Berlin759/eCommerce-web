@@ -19,6 +19,7 @@ import PropTypes from "prop-types";
 import Input, { Label } from "../components/ui/input";
 import SmallLoader from "../components/SmallLoader";
 import api from "../api/axiosInstance";
+import Pagination from "../components/Pagination";
 
 const List = ({ token }) => {
     const [list, setList] = useState([]);
@@ -322,11 +323,23 @@ const List = ({ token }) => {
     };
 
     // Filter products based on search
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     const filteredList = list.filter(
         (product) =>
             product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             product.category.toLowerCase().includes(searchTerm.toLowerCase())
         // || (product.brand && product.brand.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
+    const paginatedList = filteredList.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
     );
 
     return (
@@ -514,7 +527,7 @@ const List = ({ token }) => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {filteredList.map((product) => (
+                                        {paginatedList.map((product) => (
                                             <tr key={product._id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4">
                                                     <img
@@ -593,7 +606,7 @@ const List = ({ token }) => {
 
                         {/* Mobile Card View */}
                         <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {filteredList.map((product) => (
+                            {paginatedList.map((product) => (
                                 <div
                                     key={product._id}
                                     className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
@@ -669,6 +682,17 @@ const List = ({ token }) => {
                                 </div>
                             ))}
                         </div>
+
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={filteredList.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={setCurrentPage}
+                            onItemsPerPageChange={(newVal) => {
+                                setItemsPerPage(newVal);
+                                setCurrentPage(1);
+                            }}
+                        />
                     </>
                 )}
 

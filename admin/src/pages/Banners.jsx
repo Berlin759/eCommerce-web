@@ -14,6 +14,7 @@ import {
 import { IoMdClose } from "react-icons/io";
 import { serverUrl } from "../../config";
 import api from "../api/axiosInstance";
+import Pagination from "../components/Pagination";
 
 const Banners = () => {
     const { token } = useSelector((state) => state.auth);
@@ -228,8 +229,20 @@ const Banners = () => {
     };
 
     // Filter banners based on search
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     const filteredBanners = banners.filter((banner) =>
         banner.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
+    const paginatedBanners = filteredBanners.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
     );
 
     return (
@@ -427,7 +440,7 @@ const Banners = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {filteredBanners.map((banner) => (
+                                        {paginatedBanners.map((banner) => (
                                             <tr
                                                 key={banner._id}
                                                 className="hover:bg-gray-50 transition-colors"
@@ -496,7 +509,7 @@ const Banners = () => {
 
                         {/* Card view for small screens */}
                         <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            {filteredBanners.map((banner) => (
+                            {paginatedBanners.map((banner) => (
                                 <div
                                     key={banner._id}
                                     className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
@@ -547,6 +560,17 @@ const Banners = () => {
                                 </div>
                             ))}
                         </div>
+
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={filteredBanners.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={setCurrentPage}
+                            onItemsPerPageChange={(newVal) => {
+                                setItemsPerPage(newVal);
+                                setCurrentPage(1);
+                            }}
+                        />
                     </>
                 )}
 
