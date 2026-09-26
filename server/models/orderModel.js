@@ -83,7 +83,7 @@ const orderSchema = new mongoose.Schema({
         },
         email: {
             type: String,
-            required: true,
+            required: false,
         },
         street: {
             type: String,
@@ -106,6 +106,10 @@ const orderSchema = new mongoose.Schema({
             required: true,
         },
         phone: {
+            type: String,
+            required: true,
+        },
+        countryCode: {
             type: String,
             required: true,
         },

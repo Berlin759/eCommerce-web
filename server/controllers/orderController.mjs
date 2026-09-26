@@ -38,7 +38,8 @@ const createOrder = async (req, res) => {
         };
 
         address["firstName"] = user.name;
-        address["email"] = user.email;
+        address["phone"] = user.phone;
+        address["countryCode"] = user.countryCode;
 
         const getAddressValue = (field) => {
             switch (field) {
@@ -72,13 +73,14 @@ const createOrder = async (req, res) => {
         const requiredAddressFields = [
             "firstName",
             // "lastName",
-            "email",
+            // "email",
             "street",
             "city",
             "state",
             "zipcode",
             "country",
             "phone",
+            "countryCode",
         ];
 
         const missingFields = requiredAddressFields.filter((field) => {
@@ -132,6 +134,7 @@ const createOrder = async (req, res) => {
                 zipcode: getAddressValue("zipcode"),
                 country: address.country || "",
                 phone: address.phone || address.phoneNumber || "",
+                countryCode: address.countryCode || "",
             },
         });
 
@@ -390,6 +393,7 @@ const updateCashOnDeliveryOrderStatus = async (req, res) => {
             state: order.address.state,
             country: order.address.country,
             phone: order.address.phone,
+            countryCode: order.address.countryCode,
             orderId: order.orderId,
             paymentMethod: "cod",
             items: order.items,

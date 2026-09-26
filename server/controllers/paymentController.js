@@ -28,13 +28,14 @@ export const createRazorpayOrder = async (req, res) => {
         const requiredAddressFields = [
             "firstName",
             "lastName",
-            "email",
+            // "email",
             "street",
             "city",
             "state",
             "zipcode",
             "country",
             "phone",
+            "countryCode",
         ];
         const missingFields = requiredAddressFields.filter((field) => {
             const value =
@@ -96,6 +97,7 @@ export const createRazorpayOrder = async (req, res) => {
                 zipcode: address.zipcode || address.zipCode || "",
                 country: address.country || "",
                 phone: address.phone || "",
+                countryCode: address.countryCode || "",
             },
             paymentMethod: "online",
             paymentStatus: "pending",
@@ -325,6 +327,7 @@ export const handleRazorpayWebhook = async (req, res) => {
                 state: order.address.state,
                 country: order.address.country,
                 phone: order.address.phone,
+                countryCode: order.address.countryCode,
                 orderId: order.orderId,
                 order_date: order.date,
                 paymentMethod: order.paymentMethod || "online",

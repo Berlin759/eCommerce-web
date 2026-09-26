@@ -326,7 +326,7 @@ const PaymentSuccess = () => {
                                     What&apos;s Next?
                                 </h2>
                                 <div className="space-y-3">
-                                    <div className="flex items-start gap-3">
+                                    {/* <div className="flex items-start gap-3">
                                         <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
                                             1
                                         </div>
@@ -339,10 +339,10 @@ const PaymentSuccess = () => {
                                                 your order details.
                                             </p>
                                         </div>
-                                    </div>
+                                    </div> */}
                                     <div className="flex items-start gap-3">
                                         <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                                            2
+                                            1
                                         </div>
                                         <div>
                                             <p className="font-medium text-blue-900">Processing</p>
@@ -353,7 +353,7 @@ const PaymentSuccess = () => {
                                     </div>
                                     <div className="flex items-start gap-3">
                                         <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                                            3
+                                            2
                                         </div>
                                         <div>
                                             <p className="font-medium text-blue-900">Shipping</p>
@@ -405,13 +405,21 @@ const PaymentSuccess = () => {
                                 </div>
 
                                 <div className="space-y-3">
-                                    <button
+                                    {/* <button
                                         onClick={handleShare}
                                         className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-900 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                                     >
                                         <FaShare className="w-4 h-4" />
                                         Share Order
-                                    </button>
+                                    </button> */}
+
+                                    <Link
+                                        to={`/checkout/${orderId}`}
+                                        className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                    >
+                                        <FaShoppingBag className="w-4 h-4" />
+                                        Show Order Details
+                                    </Link>
 
                                     <Link
                                         to="/shop"

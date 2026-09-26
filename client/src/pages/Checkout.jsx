@@ -375,14 +375,16 @@ const Checkout = () => {
                                         {order.address.firstName} {order.address.lastName}
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <FaEnvelope className="w-4 h-4 text-gray-500" />
-                                    <span className="text-gray-600">{order.address.email}</span>
-                                </div>
-                                {order.address.phone && (
+                                {order.address.email && (
+                                    <div className="flex items-center gap-2">
+                                        <FaEnvelope className="w-4 h-4 text-gray-500" />
+                                        <span className="text-gray-600">{order.address.email}</span>
+                                    </div>
+                                )}
+                                {order.address.phone && order.address.countryCode && (
                                     <div className="flex items-center gap-2">
                                         <FaPhone className="w-4 h-4 text-gray-500" />
-                                        <span className="text-gray-600">{order.address.phone}</span>
+                                        <span className="text-gray-600">{order.address.countryCode} {order.address.phone}</span>
                                     </div>
                                 )}
                                 <div className="flex items-start gap-2">
