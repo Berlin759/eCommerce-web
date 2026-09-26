@@ -296,7 +296,6 @@ const Profile = () => {
                     onClose={() => setOpenAddressEdit(null)}
                     onSuccess={async () => {
                         await fetchUserProfile();
-                        toast.success("Address saved successfully");
                         setOpenAddressEdit(null);
                     }}
                 />

@@ -12,13 +12,13 @@ import {
 import { emptyCart } from "../assets/images";
 import Container from "../components/Container";
 import PriceFormat from "../components/PriceFormat";
+import EditAddressModal from "../components/EditAddressModal";
 import toast from "react-hot-toast";
 import {
     FaMinus,
     FaPlus,
     FaTrash,
     FaMapMarkerAlt,
-    FaTimes,
     FaCheck,
     FaChevronDown,
     FaChevronUp,
@@ -39,17 +39,6 @@ const Cart = () => {
     const [showAddressModal, setShowAddressModal] = useState(false);
     const [isAddressesExpanded, setIsAddressesExpanded] = useState(false);
     const [loadingAddress, setLoadingAddress] = useState(false);
-    const [addressForm, setAddressForm] = useState({
-        label: "",
-        street: "",
-        city: "",
-        state: "",
-        zipCode: "",
-        country: "",
-        phone: "",
-        isDefault: false,
-    });
-    const [isAddingAddress, setIsAddingAddress] = useState(false);
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
     useEffect(() => {
@@ -92,45 +81,6 @@ const Cart = () => {
             console.error("Error fetching addresses:", error);
         } finally {
             setLoadingAddress(false);
-        };
-    };
-
-    const handleAddAddress = async (e) => {
-        e.preventDefault();
-        setIsAddingAddress(true);
-
-        try {
-            let payload = addressForm;
-            const response = await api.post(`${serverUrl}/api/user/addresses`, payload);
-
-            const data = response.data;
-            if (data.success) {
-                toast.success("Address added successfully!");
-                fetchAddresses();
-                setShowAddressModal(false);
-                setAddressForm({
-                    label: "",
-                    street: "",
-                    city: "",
-                    state: "",
-                    zipCode: "",
-                    country: "",
-                    phone: "",
-                    isDefault: false,
-                });
-            } else {
-                toast.error(data.message || "Failed to add address");
-            }
-        } catch (error) {
-            console.error("Error adding address:", error);
-
-            if (error.response && error.response.data) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error("Failed to add address");
-            };
-        } finally {
-            setIsAddingAddress(false);
         };
     };
 
@@ -767,182 +717,13 @@ const Cart = () => {
 
             {/* Add Address Modal */}
             {showAddressModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl max-w-md w-full p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-gray-900">
-                                Add New Address
-                            </h3>
-                            <button
-                                onClick={() => setShowAddressModal(false)}
-                                className="text-gray-400 hover:text-gray-600"
-                            >
-                                <FaTimes className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleAddAddress} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Address Label *
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        value={addressForm.label}
-                                        onChange={(e) =>
-                                            setAddressForm({ ...addressForm, label: e.target.value })
-                                        }
-                                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white cursor-pointer"
-                                        required
-                                    >
-                                        <option value="">Select address type</option>
-                                        <option value="Home">Home</option>
-                                        <option value="Work">Work</option>
-                                        <option value="Hometown">Hometown</option>
-                                    </select>
-                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                        <svg
-                                            className="w-4 h-4 text-gray-400"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M19 9l-7 7-7-7"
-                                            />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Street Address *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={addressForm.street}
-                                    onChange={(e) =>
-                                        setAddressForm({ ...addressForm, street: e.target.value })
-                                    }
-                                    placeholder="House number and street name"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    required
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        City *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={addressForm.city}
-                                        onChange={(e) =>
-                                            setAddressForm({ ...addressForm, city: e.target.value })
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        State *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={addressForm.state}
-                                        onChange={(e) =>
-                                            setAddressForm({ ...addressForm, state: e.target.value })
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        ZIP Code *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={addressForm.zipCode}
-                                        onChange={(e) =>
-                                            setAddressForm({
-                                                ...addressForm,
-                                                zipCode: e.target.value,
-                                            })
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Country *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={addressForm.country}
-                                        onChange={(e) =>
-                                            setAddressForm({
-                                                ...addressForm,
-                                                country: e.target.value,
-                                            })
-                                        }
-                                        placeholder="e.g. India"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    id="isDefault"
-                                    checked={addressForm.isDefault}
-                                    onChange={(e) =>
-                                        setAddressForm({
-                                            ...addressForm,
-                                            isDefault: e.target.checked,
-                                        })
-                                    }
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                />
-                                <label
-                                    htmlFor="isDefault"
-                                    className="ml-2 text-sm text-gray-700"
-                                >
-                                    Set as default address
-                                </label>
-                            </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowAddressModal(false)}
-                                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isAddingAddress}
-                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
-                                >
-                                    {isAddingAddress ? "Adding..." : "Add Address"}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <EditAddressModal
+                    onClose={() => setShowAddressModal(false)}
+                    onSuccess={() => {
+                        fetchAddresses();
+                        setShowAddressModal(false);
+                    }}
+                />
             )}
         </div>
     );
