@@ -320,7 +320,8 @@ const Orders = () => {
                             <p className="text-xl lg:text-2xl font-bold text-purple-600">
                                 $
                                 {orders
-                                    .reduce((sum, order) => sum + order.amount, 0)
+                                    .filter((order) => order.paymentStatus === "paid")
+                                    .reduce((sum, order) => sum + Number(order.amount || 0), 0)
                                     .toFixed(2)}
                             </p>
                         </div>
@@ -430,101 +431,101 @@ const Orders = () => {
                             {filteredOrders
                                 .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                                 .map((order) => (
-                                <tr key={order._id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm font-medium text-gray-900">
-                                            #{order._id.slice(-8).toUpperCase()}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center">
-                                            <div className="flex-shrink-0 h-8 w-8">
-                                                <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-                                                    <FaUser className="w-4 h-4 text-gray-600" />
+                                    <tr key={order._id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm font-medium text-gray-900">
+                                                #{order._id.slice(-8).toUpperCase()}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center">
+                                                <div className="flex-shrink-0 h-8 w-8">
+                                                    <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                                        <FaUser className="w-4 h-4 text-gray-600" />
+                                                    </div>
+                                                </div>
+                                                <div className="ml-3">
+                                                    <div className="text-sm font-medium text-gray-900">
+                                                        {order.userId?.name || "N/A"}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {order.userId?.email || "N/A"}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="ml-3">
-                                                <div className="text-sm font-medium text-gray-900">
-                                                    {order.userId?.name || "N/A"}
-                                                </div>
-                                                <div className="text-sm text-gray-500">
-                                                    {order.userId?.email || "N/A"}
-                                                </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center text-sm text-gray-900">
+                                                <FaCalendarAlt className="w-4 h-4 mr-2 text-gray-400" />
+                                                {new Date(order.date).toLocaleDateString()}
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center text-sm text-gray-900">
-                                            <FaCalendarAlt className="w-4 h-4 mr-2 text-gray-400" />
-                                            {new Date(order.date).toLocaleDateString()}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900">
-                                            {order.items.length} items
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm font-medium text-gray-900">
-                                            ${order.amount.toFixed(2)}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span
-                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                                                order.status
-                                            )}`}
-                                        >
-                                            {getStatusIcon(order.status)}
-                                            {order.status.charAt(0).toUpperCase() +
-                                                order.status.slice(1)}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center gap-2">
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm text-gray-900">
+                                                {order.items.length} items
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm font-medium text-gray-900">
+                                                ${order.amount.toFixed(2)}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
                                             <span
-                                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
-                                                    order.paymentStatus
+                                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                                                    order.status
                                                 )}`}
                                             >
-                                                {order.paymentMethod === "cod" ? (
-                                                    <FaMoneyBillWave className="w-3 h-3" />
-                                                ) : (
-                                                    <FaCreditCard className="w-3 h-3" />
-                                                )}
-                                                {order.paymentStatus.charAt(0).toUpperCase() +
-                                                    order.paymentStatus.slice(1)}
+                                                {getStatusIcon(order.status)}
+                                                {order.status.charAt(0).toUpperCase() +
+                                                    order.status.slice(1)}
                                             </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div className="flex items-center justify-end space-x-2">
-                                            <Link
-                                                to={`/checkout/${order._id}`}
-                                                className="text-green-600 hover:text-green-900 transition-colors p-1 rounded"
-                                                title="Order Details"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <FaEye className="w-4 h-4" />
-                                            </Link>
-                                            <button
-                                                onClick={() => handleEditOrder(order)}
-                                                className="text-blue-600 hover:text-blue-900 p-1 rounded"
-                                                title="Edit Order"
-                                            >
-                                                <FaEdit className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => deleteOrder(order._id)}
-                                                className="text-red-600 hover:text-red-900 p-1 rounded"
-                                                title="Delete Order"
-                                            >
-                                                <FaTrash className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
+                                                        order.paymentStatus
+                                                    )}`}
+                                                >
+                                                    {order.paymentMethod === "cod" ? (
+                                                        <FaMoneyBillWave className="w-3 h-3" />
+                                                    ) : (
+                                                        <FaCreditCard className="w-3 h-3" />
+                                                    )}
+                                                    {order.paymentStatus.charAt(0).toUpperCase() +
+                                                        order.paymentStatus.slice(1)}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <div className="flex items-center justify-end space-x-2">
+                                                <Link
+                                                    to={`/checkout/${order._id}`}
+                                                    className="text-green-600 hover:text-green-900 transition-colors p-1 rounded"
+                                                    title="Order Details"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <FaEye className="w-4 h-4" />
+                                                </Link>
+                                                <button
+                                                    onClick={() => handleEditOrder(order)}
+                                                    className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                                                    title="Edit Order"
+                                                >
+                                                    <FaEdit className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => deleteOrder(order._id)}
+                                                    className="text-red-600 hover:text-red-900 p-1 rounded"
+                                                    title="Delete Order"
+                                                >
+                                                    <FaTrash className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
                         </tbody>
                     </table>
                 </div>
@@ -562,107 +563,107 @@ const Orders = () => {
                     filteredOrders
                         .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                         .map((order) => (
-                        <div
-                            key={order._id}
-                            className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
-                        >
-                            {/* Header */}
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center space-x-3">
-                                    <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                        <FaUser className="w-5 h-5 text-gray-600" />
+                            <div
+                                key={order._id}
+                                className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
+                            >
+                                {/* Header */}
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                            <FaUser className="w-5 h-5 text-gray-600" />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium text-gray-900">
+                                                #{order._id.slice(-8).toUpperCase()}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {order.userId?.name || "N/A"}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex space-x-2">
+                                        <button
+                                            onClick={() => handleEditOrder(order)}
+                                            className="text-blue-600 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-50"
+                                            title="Edit Order"
+                                        >
+                                            <FaEdit className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => deleteOrder(order._id)}
+                                            className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50"
+                                            title="Delete Order"
+                                        >
+                                            <FaTrash className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Customer Info */}
+                                <div className="mb-3">
+                                    <div className="text-sm text-gray-600 mb-1">Customer Email</div>
+                                    <div className="text-sm font-medium text-gray-900">
+                                        {order.userId?.email || "N/A"}
+                                    </div>
+                                </div>
+
+                                {/* Order Details */}
+                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <div className="text-xs text-gray-500 mb-1">Date</div>
+                                        <div className="flex items-center text-sm text-gray-900">
+                                            <FaCalendarAlt className="w-3 h-3 mr-1 text-gray-400" />
+                                            {new Date(order.date).toLocaleDateString()}
+                                        </div>
                                     </div>
                                     <div>
-                                        <div className="text-sm font-medium text-gray-900">
-                                            #{order._id.slice(-8).toUpperCase()}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                            {order.userId?.name || "N/A"}
+                                        <div className="text-xs text-gray-500 mb-1">Items</div>
+                                        <div className="text-sm text-gray-900">
+                                            {order.items.length} items
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex space-x-2">
-                                    <button
-                                        onClick={() => handleEditOrder(order)}
-                                        className="text-blue-600 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-50"
-                                        title="Edit Order"
-                                    >
-                                        <FaEdit className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => deleteOrder(order._id)}
-                                        className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50"
-                                        title="Delete Order"
-                                    >
-                                        <FaTrash className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
 
-                            {/* Customer Info */}
-                            <div className="mb-3">
-                                <div className="text-sm text-gray-600 mb-1">Customer Email</div>
-                                <div className="text-sm font-medium text-gray-900">
-                                    {order.userId?.email || "N/A"}
-                                </div>
-                            </div>
-
-                            {/* Order Details */}
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <div className="text-xs text-gray-500 mb-1">Date</div>
-                                    <div className="flex items-center text-sm text-gray-900">
-                                        <FaCalendarAlt className="w-3 h-3 mr-1 text-gray-400" />
-                                        {new Date(order.date).toLocaleDateString()}
+                                {/* Amount */}
+                                <div className="mb-4">
+                                    <div className="text-xs text-gray-500 mb-1">Amount</div>
+                                    <div className="text-lg font-bold text-gray-900">
+                                        ${order.amount.toFixed(2)}
                                     </div>
                                 </div>
-                                <div>
-                                    <div className="text-xs text-gray-500 mb-1">Items</div>
-                                    <div className="text-sm text-gray-900">
-                                        {order.items.length} items
-                                    </div>
+
+                                {/* Status Badges */}
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    <span
+                                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                                            order.status
+                                        )}`}
+                                    >
+                                        {getStatusIcon(order.status)}
+                                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                    </span>
+                                    <span
+                                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
+                                            order.paymentStatus
+                                        )}`}
+                                    >
+                                        {order.paymentMethod === "cod" ? (
+                                            <FaMoneyBillWave className="w-3 h-3" />
+                                        ) : (
+                                            <FaCreditCard className="w-3 h-3" />
+                                        )}
+                                        {order.paymentStatus.charAt(0).toUpperCase() +
+                                            order.paymentStatus.slice(1)}
+                                    </span>
+                                </div>
+
+                                {/* Payment Method */}
+                                <div className="text-xs text-gray-500">
+                                    Payment Method: {order.paymentMethod?.toUpperCase() || "N/A"}
                                 </div>
                             </div>
-
-                            {/* Amount */}
-                            <div className="mb-4">
-                                <div className="text-xs text-gray-500 mb-1">Amount</div>
-                                <div className="text-lg font-bold text-gray-900">
-                                    ${order.amount.toFixed(2)}
-                                </div>
-                            </div>
-
-                            {/* Status Badges */}
-                            <div className="flex flex-wrap gap-2 mb-4">
-                                <span
-                                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                                        order.status
-                                    )}`}
-                                >
-                                    {getStatusIcon(order.status)}
-                                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                                </span>
-                                <span
-                                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
-                                        order.paymentStatus
-                                    )}`}
-                                >
-                                    {order.paymentMethod === "cod" ? (
-                                        <FaMoneyBillWave className="w-3 h-3" />
-                                    ) : (
-                                        <FaCreditCard className="w-3 h-3" />
-                                    )}
-                                    {order.paymentStatus.charAt(0).toUpperCase() +
-                                        order.paymentStatus.slice(1)}
-                                </span>
-                            </div>
-
-                            {/* Payment Method */}
-                            <div className="text-xs text-gray-500">
-                                Payment Method: {order.paymentMethod?.toUpperCase() || "N/A"}
-                            </div>
-                        </div>
-                    ))
+                        ))
                 )}
             </div>
 
